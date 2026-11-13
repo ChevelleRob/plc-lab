@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab</title>
+<meta name="description" content="Practice tools for PLC students: Allen-Bradley SLC 500, CompactLogix and Siemens S7.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --live:#178F4C; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --live:#3BD681; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --live:#3BD681; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 12px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.intro{margin-top:18px}
+
+.tools{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px}
+.tool{display:flex;align-items:center;gap:14px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:14px;color:inherit;text-decoration:none;min-height:64px}
+.tool:hover{border-color:var(--ink)}
+.tool .lamp{width:14px;height:14px;border-radius:50%;flex:none;background:var(--live);box-shadow:0 0 8px var(--live)}
+.tool .txt{flex:1;min-width:0}
+.tool b{display:block;font-size:18px}
+.tool small{display:block;color:var(--muted);font-size:15px}
+.tool .tv{font-family:var(--mono);font-size:12px;color:var(--muted);flex:none}
+.tool .go{font-size:22px;font-weight:700;color:var(--muted);flex:none}
+.plats{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.plats span{font-size:13px;font-weight:600;color:var(--c1);background:var(--c1bg);border-radius:4px;padding:1px 7px}
+footer{margin-top:28px;font-size:14px}
+footer a{color:var(--c1)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1>PLC Lab</h1><span>Practice tools for PLC students</span><span class="ver">v1.0</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="intro">Hands-on practice for Allen-Bradley SLC 500, CompactLogix and Siemens S7. Pick a tool. Each one works on your phone.</p>
+
+  <h2>Tools</h2>
+  <ul class="tools">
+    <li>
+      <a class="tool" href="timers/">
+        <span class="lamp" aria-hidden="true"></span>
+        <span class="txt">
+          <b>Timers &amp; Addressing</b>
+          <small>Run TON, TOF and RTO/TONR on a live rung, then practice reading I/O addresses.</small>
+          <span class="plats"><span>SLC 500</span><span>CompactLogix</span><span>Siemens S7</span></span>
+        </span>
+        <span class="tv">v1.6</span>
+        <span class="go" aria-hidden="true">›</span>
+      </a>
+    </li>
+  </ul>
+
+  <footer class="muted">
+    <a href="https://github.com/ChevelleRob/plc-lab/blob/main/CHANGELOG.md">What's new</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab: PLC timers and addressing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --wire:#8A939A; --live:#178F4C; --liveglow:rgba(23,143,76,.22);
+  --amber:#B97C00; --red:#C13D2B; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5; --c2:#9A6400; --c2bg:#F6E7C8; --c3:#177A45; --c3bg:#D6EEDF; --c4:#7A3C99; --c4bg:#EBDDF2;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+    --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+  --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+/* Header: a nameplate, like an engraved panel tag */
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+.plats{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
+.plats button{flex:1 0 auto;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 10px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap}
+.plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
+.tabs{display:flex;margin-top:10px;border-bottom:1px solid rgba(255,255,255,.18)}
+.tabs a{flex:1;text-align:center;padding:8px 0 9px;color:var(--onpanel);opacity:.65;text-decoration:none;font-weight:600;border-bottom:3px solid transparent}
+.tabs a[aria-current="page"]{opacity:1;border-bottom-color:var(--live)}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+h3{font-size:17px;margin:20px 0 6px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.seg{display:flex;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-weight:600;cursor:pointer;border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+
+/* Ladder: the one bold element */
+.ladder{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;margin-top:14px;padding:6px 2px}
+.ladder svg{display:block;width:100%;height:auto}
+.ladder .rail{stroke:var(--live);stroke-width:4}
+.ladder .w{stroke:var(--wire);stroke-width:2.5;fill:none;transition:stroke .08s}
+.ladder .w.on{stroke:var(--live);stroke-width:3.5;filter:drop-shadow(0 0 3px var(--liveglow))}
+.ladder .cb{stroke:var(--ink);stroke-width:2.5}
+.ladder .cfill{fill:transparent}
+.ladder .cfill.on{fill:var(--live)}
+.ladder .coil{fill:none;stroke:var(--ink);stroke-width:2.5}
+.ladder .coil.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .box{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder text{fill:var(--ink);font-family:var(--sans);font-size:12px}
+.ladder .addr{font-family:var(--mono);font-size:10.5px;fill:var(--c1)}
+.ladder .tag{font-size:11px;fill:var(--muted)}
+.ladder .big{font-weight:700;font-size:15px}
+.ladder .val{font-family:var(--mono);font-size:12px;font-weight:700}
+.ladder .ind{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .ind.on{fill:var(--live);stroke:var(--live)}
+.ladder .indt{font-size:10px;font-weight:700}
+.ladder .indt.on{fill:#fff}
+.lamp{fill:var(--surface2);stroke:var(--ink);stroke-width:1.5}
+.lamp.on{fill:var(--live);filter:drop-shadow(0 0 6px var(--live))}
+
+/* Controls */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);color:var(--onpanel);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 12px rgba(0,0,0,.25)}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inds{display:flex;align-items:center;gap:14px;min-width:0}
+.pilot{display:flex;align-items:center;gap:8px}
+.pilot b{display:block;font-size:14px}
+.pilot small{display:block;font-family:var(--mono);font-size:11px;opacity:.75}
+.plamp{width:40px;height:40px;border-radius:50%;flex:none;background:#3A4650;box-shadow:inset 0 0 0 3px rgba(255,255,255,.15);transition:background .08s}
+.plamp.on{background:var(--live);box-shadow:0 0 16px var(--live)}
+.bits{display:flex;gap:8px}
+.bl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
+.bl i{width:16px;height:16px;border-radius:50%;background:#3A4650;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+.bl i.on{background:var(--live);box-shadow:0 0 8px var(--live)}
+.acts{display:flex;gap:14px;flex:none}
+.bar .switch,.bar .pb{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .knob{width:44px;height:44px;background:#1A2228}
+.bar .pb .cap{width:44px;height:44px}
+.bar .switch b,.bar .pb b{font-size:13px}
+.bar .switch small,.bar .pb small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.switch{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left}
+.knob{width:46px;height:46px;border-radius:50%;background:var(--panel);position:relative;flex:none;box-shadow:inset 0 0 0 3px var(--wire)}
+.knob::after{content:"";position:absolute;left:50%;top:7px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:var(--onpanel);transform:rotate(-40deg);transform-origin:50% 16px;transition:transform .15s}
+.switch[aria-pressed="true"] .knob::after{transform:rotate(40deg)}
+.switch[aria-pressed="true"] .knob{box-shadow:inset 0 0 0 3px var(--live)}
+.switch b{display:block;font-size:16px}
+.switch small{color:var(--muted);font-size:13px}
+.pb{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;user-select:none;-webkit-user-select:none;touch-action:none}
+.pb .cap{width:46px;height:46px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 4px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb.held .cap{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb b{display:block;font-size:16px}
+.pb small{color:var(--muted);font-size:13px}
+
+.status{width:100%;border-collapse:collapse;margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;font-size:15px}
+.status td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+.status tr:first-child td{border-top:0}
+.status td:first-child{font-family:var(--mono);font-size:13px;color:var(--c1);white-space:nowrap}
+.status td.v{font-family:var(--mono);font-weight:700;white-space:nowrap;width:5.5em}
+.bit{display:inline-block;min-width:2.2em;text-align:center;border-radius:4px;padding:0 4px;background:var(--surface2);color:var(--muted)}
+.bit.on{background:var(--live);color:#fff}
+.status td.m{color:var(--muted);font-size:14px}
+
+.chartbox{margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.chartbox canvas{display:block;width:100%;height:210px}
+.note{margin-top:14px;padding:12px 14px;border-left:4px solid var(--amber);background:var(--surface);border-radius:0 8px 8px 0}
+.note p{margin:4px 0}
+.try{margin-top:12px;padding:12px 14px;border-left:4px solid var(--live);background:var(--surface);border-radius:0 8px 8px 0}
+
+/* Addressing */
+.anat{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
+.picker{display:flex;gap:6px;flex-wrap:wrap}
+.picker button{font-family:var(--mono);font-size:14px;border:1.5px solid var(--line);background:var(--surface2);border-radius:6px;padding:5px 8px;cursor:pointer}
+.picker button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.parts{display:flex;flex-wrap:wrap;gap:3px;margin:16px 0 6px;font-family:var(--mono);font-size:clamp(24px,7vw,36px);font-weight:700}
+.parts button{border:0;border-radius:6px;padding:2px 5px;cursor:pointer;border-bottom:3px solid transparent}
+.parts button[aria-pressed="true"]{border-bottom-color:currentColor}
+.k1{color:var(--c1);background:var(--c1bg)} .k2{color:var(--c2);background:var(--c2bg)} .k3{color:var(--c3);background:var(--c3bg)} .k4{color:var(--c4);background:var(--c4bg)} .k0{color:var(--muted);background:transparent}
+.partdesc{min-height:3.2em;font-size:16px}
+.partdesc b{font-family:var(--mono)}
+.summary{margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
+.ref{width:100%;border-collapse:collapse;font-size:15px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.ref td,.ref th{padding:6px 10px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+.ref th{font-weight:600;background:var(--surface2);border-top:0}
+.ref td:first-child{font-family:var(--mono);color:var(--c1);white-space:nowrap}
+.scroll{overflow-x:auto}
+
+.quiz{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
+.qhead{display:flex;justify-content:space-between;color:var(--muted);font-size:14px}
+.qtext{font-size:18px;font-weight:600;margin:8px 0 12px}
+.qtext code,.qexp code,.note code,.try code,p code{font-family:var(--mono);font-size:.9em;color:var(--c1)}
+.opts{display:grid;gap:8px}
+.opts button{text-align:left;border:1.5px solid var(--line);background:var(--surface2);border-radius:8px;padding:11px 12px;cursor:pointer;font-family:var(--mono);font-size:15px}
+.opts button.plain{font-family:var(--sans);font-size:16px}
+.opts button.right{border-color:var(--live);background:var(--liveglow)}
+.opts button.wrong{border-color:var(--red);opacity:.85}
+.opts button:disabled{cursor:default;color:var(--ink)}
+.qexp{margin-top:12px;font-size:16px}
+.next{margin-top:12px;background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1>PLC Lab</h1><span>Timers and addressing practice</span><span class="ver">v1.6</span></div>
+    <div class="plats" role="group" aria-label="PLC platform">
+      <button data-plat="slc">SLC 500</button>
+      <button data-plat="clx">CompactLogix</button>
+      <button data-plat="s7">Siemens S7</button>
+    </div>
+    <nav class="tabs">
+      <a href="#timers" data-view="timers">Timers</a>
+      <a href="#addressing" data-view="addressing">Addressing</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- TIMERS -->
+  <section id="view-timers">
+    <div class="lbl">Timer instruction</div>
+    <div class="seg" id="typeSeg" role="group" aria-label="Timer type"></div>
+    <h2 id="tTitle"></h2>
+    <p id="tDesc"></p>
+
+    <div class="ladder" id="ladder" aria-label="Live ladder logic"></div>
+
+    <div class="lbl">Preset</div>
+    <div class="seg" id="preSeg" role="group" aria-label="Preset time">
+      <button data-pre="3000">3 s</button><button data-pre="5000" aria-pressed="true">5 s</button><button data-pre="10000">10 s</button>
+    </div>
+
+    <table class="status" id="statusTbl"></table>
+
+    <div class="lbl">Timing diagram (last 20 seconds)</div>
+    <div class="chartbox"><canvas id="chart" aria-label="Timing diagram"></canvas></div>
+
+    <div class="try" id="tryBox"></div>
+    <div class="note" id="platNote"></div>
+  </section>
+
+  <!-- ADDRESSING -->
+  <section id="view-addressing" hidden>
+    <h2 id="aTitle"></h2>
+    <p id="aIntro" class="muted"></p>
+    <div class="anat">
+      <div class="picker" id="addrPicker" role="group" aria-label="Example addresses"></div>
+      <div class="parts" id="parts"></div>
+      <div class="partdesc" id="partDesc"></div>
+      <div class="summary" id="addrSummary"></div>
+    </div>
+
+    <h3>Quick reference</h3>
+    <div class="scroll" id="refBox"></div>
+
+    <h3>Check yourself</h3>
+    <div class="quiz" id="quiz"></div>
+  </section>
+</main>
+
+<div class="bar" id="ctlBar">
+  <div class="in">
+    <div class="inds">
+      <div class="pilot"><span class="plamp" id="pLamp" aria-hidden="true"></span><span><b>Lamp</b><small id="pLampA"></small></span></div>
+      <div class="bits" id="pBits" aria-label="Timer bits"></div>
+    </div>
+    <div class="acts">
+      <button class="pb" id="rstPb" hidden>
+        <span class="cap" aria-hidden="true"></span>
+        <span><b>Reset</b><small id="rstAddr"></small></span>
+      </button>
+      <button class="switch" id="inSw" aria-pressed="false">
+        <span class="knob" aria-hidden="true"></span>
+        <span><b>Start</b><small id="inAddr"></small></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var store = {
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var state = {
+  plat: store.get("rl-plat") || "slc",
+  type: "TON",
+  pre: 5000,
+  inp:false, rst:false, acc:0,
+  hist:[], t:0, lastSample:-1
+};
+if(["slc","clx","s7"].indexOf(state.plat)<0) state.plat="slc";
+
+/* ---------- Platform data ---------- */
+var P = {
+  slc:{
+    name:"SLC 500",
+    types:["TON","TOF","RTO"],
+    tNames:{TON:"TON: Timer On Delay",TOF:"TOF: Timer Off Delay",RTO:"RTO: Retentive Timer On"},
+    inA:"I:1/0", rsA:"I:1/1", outA:"O:2/0", tmr:"T4:0",
+    bit:function(b){return "T4:0/"+b}, word:function(w){return "T4:0."+w},
+    accFmt:function(ms){return String(Math.floor(ms/10))},
+    preFmt:function(ms){return String(ms/10)},
+    unit:"time-base units (0.01 s)",
+    note:"<p><b>SLC 500:</b> PRE and ACC count in time-base units, not seconds. With a 0.01 s time base, a 5 s delay is a preset of <code>500</code>. With a 1.0 s time base it would be <code>5</code>.</p><p>Timer files default to <code>T4</code>. Each timer element (<code>T4:0</code>, <code>T4:1</code>…) holds three words: control bits, PRE and ACC.</p>"
+  },
+  clx:{
+    name:"CompactLogix",
+    types:["TON","TOF","RTO"],
+    tNames:{TON:"TON: Timer On Delay",TOF:"TOF: Timer Off Delay",RTO:"RTO: Retentive Timer On"},
+    inA:"Start_PB", rsA:"Reset_PB", outA:"Lamp", tmr:"Timer1",
+    inAlias:"Local:1:I.Data.0", rsAlias:"Local:1:I.Data.1", outAlias:"Local:2:O.Data.0",
+    bit:function(b){return "Timer1."+b}, word:function(w){return "Timer1."+w},
+    accFmt:function(ms){return String(Math.floor(ms))},
+    preFmt:function(ms){return String(ms)},
+    unit:"milliseconds",
+    note:"<p><b>CompactLogix:</b> PRE and ACC are always in milliseconds, so 5 seconds is <code>5000</code>. There is no time base to set.</p><p>The timer is a tag of type <code>TIMER</code>. You reach its parts with a dot: <code>Timer1.DN</code>, <code>Timer1.ACC</code>. Same instruction names and bit behavior as the SLC.</p>"
+  },
+  s7:{
+    name:"Siemens S7",
+    types:["TON","TOF","TONR"],
+    tNames:{TON:"TON: On-delay timer",TOF:"TOF: Off-delay timer",TONR:"TONR: Retentive on-delay"},
+    inA:"%I0.0", rsA:"%I0.1", outA:"%Q0.0", tmr:"\u201CIEC_Timer_0_DB\u201D",
+    bit:function(b){return "\u201CIEC_Timer_0_DB\u201D."+b}, word:function(w){return "\u201CIEC_Timer_0_DB\u201D."+w},
+    accFmt:function(ms){var s=Math.floor(ms/1000),r=Math.floor(ms%1000);return "T#"+s+"s"+(r?("_"+r+"ms"):"")},
+    preFmt:function(ms){return "T#"+(ms/1000)+"s"},
+    unit:"TIME values",
+    note:"<p><b>S7-1200/1500 (TIA Portal):</b> IEC timers have no EN or TT bits. You get <code>Q</code> (output) and <code>ET</code> (elapsed time), set with <code>PT</code> as a TIME like <code>T#5s</code>. Each timer needs its own instance data block.</p><p><b>Older S7-300/400:</b> the classic S5 timers do the same jobs under other names: <code>S_ODT</code> (on delay), <code>S_OFFDT</code> (off delay), <code>S_ODTS</code> (retentive on delay), using timers like <code>T1</code> and presets like <code>S5T#5S</code>.</p>"
+  }
+};
+var DESC = {
+  TON:"Waits after the rung goes true. If the rung goes false before the preset, the accumulated time resets to zero and the output never turns on.",
+  TOF:"The output turns on right away. When the rung goes false, the timer starts counting, and only then does the output turn off. Making the rung true again cancels the countdown.",
+  RTO:"Times like a TON, but it remembers the accumulated time when the rung goes false. Only a reset clears it, and the done bit stays on until you do."
+};
+DESC.TONR = DESC.RTO;
+var TRY = {
+  TON:"<b>Try this:</b> turn the switch on, then turn it off at about 3 seconds. Watch the accumulated time drop straight to zero and the lamp never light. Then leave it on past the preset.",
+  TOF:"<b>Try this:</b> turn the switch on. The lamp lights immediately. Now turn it off and watch the lamp stay on while the timer counts. Flip it back on halfway and see the count cancel.",
+  RTO:"<b>Try this:</b> flip the switch on and off in short bursts. The time adds up across bursts. Once the lamp lights, turn the switch off. It stays lit until you hold Reset."
+};
+TRY.TONR = TRY.RTO;
+var RESNOTE = '<p style="margin-top:10px"><b>Why RES goes below the RTO:</b> RES clears ACC, EN, TT and DN, but the RTO sets EN and TT again on every scan that its input is true. Whichever instruction runs last in the scan wins.</p>'+
+  '<p><b>RES below the RTO</b> (the usual way, and how it is drawn here): RES runs last, so holding Reset with the input on shows EN, TT and DN all off.</p>'+
+  '<p><b>RES above the RTO:</b> the RTO runs last, so EN and TT read on even while Reset is held. ACC still never builds up, because RES clears it again at the start of every scan.</p>';
+
+/* ---------- Timer logic ---------- */
+function retentive(){return state.type==="RTO"||state.type==="TONR"}
+function bits(){
+  var t=state.type, inp=state.inp, acc=state.acc, pre=state.pre, en=inp, tt, dn;
+  if(t==="TON"){tt=inp&&acc<pre; dn=inp&&acc>=pre}
+  else if(t==="TOF"){tt=!inp&&acc<pre; dn=inp||acc<pre}
+  else {if(state.rst) en=false; tt=inp&&!state.rst&&acc<pre; dn=acc>=pre}
+  return {en:en,tt:tt,dn:dn};
+}
+function step(dt){
+  var t=state.type;
+  if(t==="TON"){ state.acc = state.inp ? Math.min(state.acc+dt,state.pre) : 0; }
+  else if(t==="TOF"){ state.acc = state.inp ? 0 : Math.min(state.acc+dt,state.pre); }
+  else { if(state.rst) state.acc=0; else if(state.inp) state.acc=Math.min(state.acc+dt,state.pre); }
+}
+function resetTimer(){
+  state.inp=false; state.rst=false;
+  state.acc = state.type==="TOF" ? state.pre : 0;
+  state.hist=[]; state.t=0; state.lastSample=-1;
+  document.getElementById("inSw").setAttribute("aria-pressed","false");
+}
+
+/* ---------- Ladder SVG ---------- */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function contact(x,y,id,addr,tag){
+  return '<text class="addr" x="'+(x+8)+'" y="'+(y-18)+'" text-anchor="middle">'+esc(addr)+'</text>'+
+    (tag?'<text class="tag" x="'+(x+8)+'" y="'+(y+27)+'" text-anchor="middle">'+esc(tag)+'</text>':'')+
+    '<rect class="cfill" id="'+id+'f" x="'+(x+2)+'" y="'+(y-10)+'" width="12" height="20" rx="1"/>'+
+    '<line class="cb" x1="'+x+'" y1="'+(y-12)+'" x2="'+x+'" y2="'+(y+12)+'"/>'+
+    '<line class="cb" x1="'+(x+16)+'" y1="'+(y-12)+'" x2="'+(x+16)+'" y2="'+(y+12)+'"/>';
+}
+function coil(x,y,id,addr,tag,inner){
+  return '<text class="addr" x="'+(x+14)+'" y="'+(y-18)+'" text-anchor="middle">'+esc(addr)+'</text>'+
+    (tag?'<text class="tag" x="'+(x+14)+'" y="'+(y+27)+'" text-anchor="middle">'+esc(tag)+'</text>':'')+
+    '<path class="coil" id="'+id+'" d="M'+(x+6)+' '+(y-12)+' Q'+(x-3)+' '+y+' '+(x+6)+' '+(y+12)+' M'+(x+22)+' '+(y-12)+' Q'+(x+31)+' '+y+' '+(x+22)+' '+(y+12)+'"/>'+
+    (inner?'<text x="'+(x+14)+'" y="'+(y+4)+'" text-anchor="middle" style="font-size:9px;font-weight:700">'+inner+'</text>':'');
+}
+function wire(id,x1,y1,x2,y2){return '<line class="w" id="'+id+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'}
+
+function buildLadder(){
+  var p=P[state.plat], t=state.type, s7=state.plat==="s7", ret=retentive();
+  var H = (ret && !s7) ? 262 : 210, L=10, R=350, out="";
+  var inTag = state.plat==="clx" ? p.inAlias : "Start switch";
+  var rsTag = state.plat==="clx" ? p.rsAlias : "Reset button";
+  var outTag = state.plat==="clx" ? p.outAlias : "Lamp";
+  out+='<line class="rail" x1="'+L+'" y1="8" x2="'+L+'" y2="'+(H-8)+'"/><line class="rail" x1="'+R+'" y1="8" x2="'+R+'" y2="'+(H-8)+'"/>';
+  var y=52;
+  out+=wire("wInA",L,y,40,y)+contact(40,y,"cIn",p.inA,inTag)+wire("wInB",56,y,128,y);
+  if(!s7){
+    out+='<rect class="box" x="128" y="22" width="160" height="104" rx="3"/>'+
+      '<text class="big" x="138" y="42">'+t+'</text><text x="138" y="58" class="tag">'+(t==="TON"?"Timer On Delay":t==="TOF"?"Timer Off Delay":"Retentive Timer On")+'</text>'+
+      '<text x="138" y="76">Timer</text><text class="val" x="280" y="76" text-anchor="end">'+esc(p.tmr)+'</text>'+
+      (state.plat==="slc"?'<text x="138" y="91">Time Base</text><text class="val" x="280" y="91" text-anchor="end">0.01</text>':'')+
+      '<text x="138" y="'+(state.plat==="slc"?106:93)+'">Preset</text><text class="val" id="tPre" x="280" y="'+(state.plat==="slc"?106:93)+'" text-anchor="end"></text>'+
+      '<text x="138" y="'+(state.plat==="slc"?121:110)+'">Accum</text><text class="val" id="tAcc" x="280" y="'+(state.plat==="slc"?121:110)+'" text-anchor="end"></text>';
+    out+=wire("wEn",288,y,308,y)+'<circle class="ind" id="iEn" cx="322" cy="'+y+'" r="13"/><text class="indt" id="iEnT" x="322" y="'+(y+4)+'" text-anchor="middle">EN</text>'+wire("wEn2",335,y,R,y);
+    out+=wire("wDn",288,90,308,90)+'<circle class="ind" id="iDn" cx="322" cy="90" r="13"/><text class="indt" id="iDnT" x="322" y="94" text-anchor="middle">DN</text>'+wire("wDn2",335,90,R,90);
+  } else {
+    out+='<text class="addr" x="198" y="16" text-anchor="middle">'+esc(p.tmr)+'</text>'+
+      '<rect class="box" x="128" y="22" width="140" height="104" rx="3"/>'+
+      '<text class="big" x="198" y="40" text-anchor="middle">'+t+'</text><text class="tag" x="198" y="54" text-anchor="middle">Time</text>'+
+      '<text x="134" y="'+(y+4)+'" class="tag">IN</text>'+
+      (ret?'<text x="134" y="94" class="tag">R</text>':'')+
+      '<text x="134" y="116" class="tag">PT</text><text class="val" id="tPre" x="122" y="120" text-anchor="end"></text>'+wire("wPt",124,112,128,112)+
+      '<text x="262" y="'+(y+4)+'" class="tag" text-anchor="end">Q</text>'+
+      '<text x="262" y="116" class="tag" text-anchor="end">ET</text><text class="val" id="tAcc" x="276" y="120"></text>';
+    out+=wire("wQ",268,y,308,y)+'<circle class="ind" id="iDn" cx="322" cy="'+y+'" r="13"/><text class="indt" id="iDnT" x="322" y="'+(y+4)+'" text-anchor="middle">Q</text>'+wire("wDn2",335,y,R,y);
+    if(ret){ out+=wire("wRsA",L,90,40,90)+contact(40,90,"cRs",p.rsA,"")+wire("wRsB",56,90,128,90); }
+  }
+  // Rung 2: done contact drives lamp
+  var y2 = 172, dnA = s7 ? "\u201CIEC_Timer_0_DB\u201D.Q" : p.bit("DN");
+  out+=wire("wD2A",L,y2,40,y2)+contact(40,y2,"cDn",dnA,"Done")+wire("wD2B",56,y2,296,y2)+coil(296,y2,"oLamp",p.outA,outTag)+wire("wD2C",324,y2,R,y2);
+  out+='<circle class="lamp" id="lampDot" cx="250" cy="'+(y2+22)+'" r="0"/>';
+  if(ret && !s7){
+    var y3=230;
+    out+=wire("wR3A",L,y3,40,y3)+contact(40,y3,"cRs",p.rsA,rsTag)+wire("wR3B",56,y3,296,y3)+coil(296,y3,"oRes",p.tmr,"",'RES')+wire("wR3C",324,y3,R,y3);
+  }
+  document.getElementById("ladder").innerHTML='<svg viewBox="0 0 360 '+H+'" role="img" aria-label="Ladder logic for '+t+'">'+out+'</svg>';
+  document.getElementById("tPre").textContent = state.plat==="s7" ? p.preFmt(state.pre) : p.preFmt(state.pre);
+  ladderEls = {};
+  ["wInA","wInB","cInf","wEn","wEn2","iEn","iEnT","wDn","wDn2","iDn","iDnT","wQ","tAcc","wD2A","cDnf","wD2B","oLamp","wD2C","wRsA","cRsf","wRsB","wR3A","wR3B","oRes","wR3C"].forEach(function(id){ladderEls[id]=document.getElementById(id)});
+}
+var ladderEls={};
+function on(id,v){var e=ladderEls[id]; if(e) e.classList.toggle("on",!!v)}
+function lit(id,v){var e=document.getElementById(id); if(e) e.classList.toggle("on",!!v)}
+
+/* ---------- Status table ---------- */
+function buildStatus(){
+  var p=P[state.plat], s7=state.plat==="s7", rows;
+  if(!s7){
+    rows=[
+      ["EN",p.bit("EN"),"Enable: follows the rung condition"],
+      ["TT",p.bit("TT"),"Timer timing: on only while counting"],
+      ["DN",p.bit("DN"),"Done: the bit your other logic uses"],
+      ["PRE",p.word("PRE"),"Preset in "+p.unit],
+      ["ACC",p.word("ACC"),"Accumulated time in "+p.unit]
+    ];
+  } else {
+    rows=[
+      ["IN",p.inA+" \u2192 IN","Input to the timer"],
+      ["Q",p.bit("Q"),"Output: the bit your other logic uses"],
+      ["PT","PT","Preset time"],
+      ["ET",p.bit("ET"),"Elapsed time"]
+    ];
+    if(retentive()) rows.splice(1,0,["R",p.rsA+" \u2192 R","Reset input: clears ET"]);
+  }
+  document.getElementById("statusTbl").innerHTML = rows.map(function(r){
+    return '<tr><td>'+esc(r[1])+'</td><td class="v" id="sv'+r[0]+'"></td><td class="m">'+r[2]+'</td></tr>';
+  }).join("");
+}
+function bitHtml(v){return '<span class="bit'+(v?' on':'')+'">'+(v?1:0)+'</span>'}
+function setHtml(id,h){var e=document.getElementById(id); if(e && e.innerHTML!==h) e.innerHTML=h}
+
+/* ---------- Render loop ---------- */
+function render(){
+  var b=bits(), p=P[state.plat], s7=state.plat==="s7";
+  on("wInA",1); on("cInf",state.inp); on("wInB",state.inp);
+  on("wEn",b.en); on("wEn2",b.en); on("iEn",b.en); on("iEnT",b.en);
+  on("wDn",b.dn); on("wDn2",b.dn); on("iDn",b.dn); on("iDnT",b.dn); on("wQ",b.dn);
+  on("wD2A",1); on("cDnf",b.dn); on("wD2B",b.dn); on("oLamp",b.dn); on("wD2C",b.dn);
+  on("wRsA",1); on("wR3A",1); on("cRsf",state.rst); on("wRsB",state.rst); on("wR3B",state.rst); on("oRes",state.rst); on("wR3C",state.rst);
+  if(ladderEls.tAcc) ladderEls.tAcc.textContent = p.accFmt(state.acc);
+  lit("pLamp",b.dn); lit("plEN",b.en); lit("plTT",b.tt); lit("plDN",b.dn); lit("plQ",b.dn);
+  if(!s7){
+    setHtml("svEN",bitHtml(b.en)); setHtml("svTT",bitHtml(b.tt)); setHtml("svDN",bitHtml(b.dn));
+    setHtml("svPRE",p.preFmt(state.pre)); setHtml("svACC",p.accFmt(state.acc));
+  } else {
+    setHtml("svIN",bitHtml(state.inp)); setHtml("svQ",bitHtml(b.dn)); setHtml("svR",bitHtml(state.rst));
+    setHtml("svPT",p.preFmt(state.pre)); setHtml("svET",p.accFmt(state.acc));
+  }
+  drawChart();
+}
+
+var last=null;
+function loop(ts){
+  if(last===null) last=ts;
+  var dt=Math.min(ts-last,100); last=ts;
+  if(currentView==="timers"){
+    step(dt); state.t+=dt;
+    if(state.t-state.lastSample>=40){
+      var b=bits();
+      state.hist.push({t:state.t,inp:state.inp,en:b.en,tt:b.tt,dn:b.dn,rst:state.rst,acc:state.acc/state.pre});
+      state.lastSample=state.t;
+      while(state.hist.length && state.hist[0].t < state.t-21000) state.hist.shift();
+    }
+    render();
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ---------- Timing chart ---------- */
+var cv=document.getElementById("chart"), ctx=cv.getContext("2d");
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function drawChart(){
+  if(!ctx) return;
+  var dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  if(!w) return;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  var s7=state.plat==="s7", ret=retentive();
+  var tr = s7 ? [["IN","inp"],["Q","dn"]] : [["IN","inp"],["EN","en"],["TT","tt"],["DN","dn"]];
+  if(ret) tr.splice(1,0,[s7?"R":"RES","rst"]);
+  tr.push([s7?"ET":"ACC","acc"]);
+  var left=46, rowH=h/tr.length, win=20000, t1=state.t, t0=t1-win;
+  var ink=cssVar("--ink"), mut=cssVar("--muted"), live=cssVar("--live"), amber=cssVar("--amber"), red=cssVar("--red"), line=cssVar("--line");
+  ctx.font='600 12px '+cssVar("--sans"); ctx.textBaseline="middle";
+  function X(t){return left+(t-t0)/win*(w-left-4)}
+  // second gridlines
+  ctx.strokeStyle=line; ctx.lineWidth=1;
+  for(var s=Math.ceil(t0/1000)*1000;s<=t1;s+=1000){var gx=X(s); if(gx<left) continue; ctx.globalAlpha=(s%5000===0)?.9:.35; ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,h); ctx.stroke()}
+  ctx.globalAlpha=1;
+  tr.forEach(function(r,i){
+    var top=i*rowH+6, bot=(i+1)*rowH-6, key=r[1];
+    ctx.fillStyle=mut; ctx.fillText(r[0],4,(top+bot)/2);
+    var col = key==="acc"?amber : key==="rst"?red : key==="tt"?amber : live;
+    ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.beginPath();
+    var started=false, prevY=null;
+    state.hist.forEach(function(p){
+      var x=X(p.t); if(x<left) return;
+      var v = key==="acc" ? p.acc : (p[key]?1:0);
+      var yy = bot - v*(bot-top);
+      if(!started){ctx.moveTo(x,yy); started=true}
+      else if(key!=="acc" && prevY!==yy){ctx.lineTo(x,prevY); ctx.lineTo(x,yy)}
+      else ctx.lineTo(x,yy);
+      prevY=yy;
+    });
+    ctx.stroke();
+    if(key==="acc"){ctx.setLineDash([4,4]); ctx.strokeStyle=mut; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(left,top); ctx.lineTo(w,top); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle=mut; ctx.font='500 10px '+cssVar("--sans"); ctx.fillText("preset",left+2,top+7); ctx.font='600 12px '+cssVar("--sans")}
+  });
+}
+
+/* ---------- Timers view setup ---------- */
+function buildTimers(){
+  var p=P[state.plat];
+  if(p.types.indexOf(state.type)<0){ state.type = state.type==="RTO"?"TONR": state.type==="TONR"?"RTO":"TON"; }
+  var seg=document.getElementById("typeSeg");
+  seg.innerHTML=p.types.map(function(t){return '<button data-type="'+t+'" aria-pressed="'+(t===state.type)+'">'+t+'</button>'}).join("");
+  document.getElementById("tTitle").textContent=p.tNames[state.type];
+  document.getElementById("tDesc").textContent=DESC[state.type];
+  document.getElementById("tryBox").innerHTML=TRY[state.type] + (state.type==="RTO" ? RESNOTE : "");
+  document.getElementById("platNote").innerHTML=p.note;
+  document.getElementById("inAddr").textContent = p.inA;
+  document.getElementById("rstAddr").textContent = p.rsA;
+  document.getElementById("pLampA").textContent = p.outA;
+  var bl = state.plat==="s7" ? ["Q"] : ["EN","TT","DN"];
+  document.getElementById("pBits").innerHTML = bl.map(function(k){return '<span class="bl"><i id="pl'+k+'"></i>'+k+'</span>'}).join("");
+  document.getElementById("rstPb").hidden=!retentive();
+  resetTimer(); buildLadder(); buildStatus(); render();
+}
+document.getElementById("typeSeg").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return; state.type=b.dataset.type; buildTimers();
+});
+document.getElementById("preSeg").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  state.pre=+b.dataset.pre;
+  this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",String(x===b))});
+  resetTimer(); buildLadder(); render();
+});
+var inSw=document.getElementById("inSw");
+inSw.addEventListener("click",function(){ state.inp=!state.inp; inSw.setAttribute("aria-pressed",String(state.inp)); });
+var pb=document.getElementById("rstPb");
+function press(v){ state.rst=v; pb.classList.toggle("held",v); }
+pb.addEventListener("pointerdown",function(e){e.preventDefault(); try{pb.setPointerCapture(e.pointerId)}catch(_){} press(true)});
+["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){pb.addEventListener(ev,function(){press(false)})});
+pb.addEventListener("keydown",function(e){if(e.key===" "||e.key==="Enter"){e.preventDefault();press(true)}});
+pb.addEventListener("keyup",function(e){if(e.key===" "||e.key==="Enter")press(false)});
+pb.addEventListener("contextmenu",function(e){e.preventDefault()});
+
+/* ---------- Addressing data ---------- */
+var A = {
+  slc:{
+    title:"SLC 500 addressing",
+    intro:"Addresses point to a file, then an element or slot, then a word or bit. Bits inside a word run 0 to 15, in decimal.",
+    ex:[
+      {parts:[["I",1,"<b>I</b> = input image file (file 1)."],[":1",2,"<b>:1</b> = the card in slot 1. Slot 0 is the processor."],["/0",3,"<b>/0</b> = bit 0, which is terminal 0 on that input card."]],sum:"Input card in slot 1, terminal 0. The full form is <code>I:1.0/0</code>, where <code>.0</code> is word 0 of the card."},
+      {parts:[["O",1,"<b>O</b> = output image file (file 0)."],[":2",2,"<b>:2</b> = the card in slot 2."],["/7",3,"<b>/7</b> = bit 7, terminal 7 on that output card."]],sum:"Output card in slot 2, terminal 7."},
+      {parts:[["B3",1,"<b>B3</b> = binary (bit) file number 3, the default bit file."],[":2",2,"<b>:2</b> = word 2 in that file."],["/5",3,"<b>/5</b> = bit 5 in that word."]],sum:"Internal bit. The same bit can be written <code>B3/37</code>, because word 2 starts at bit 32 (2 \u00D7 16) and 32 + 5 = 37."},
+      {parts:[["T4",1,"<b>T4</b> = timer file 4, the default timer file."],[":0",2,"<b>:0</b> = timer element 0, the first timer."],["/DN",3,"<b>/DN</b> = the done bit. Use a slash for bits: <code>/EN</code>, <code>/TT</code>, <code>/DN</code>."]],sum:"Done bit of the first timer. Its words use a dot instead: <code>T4:0.PRE</code> and <code>T4:0.ACC</code>."},
+      {parts:[["N7",1,"<b>N7</b> = integer file 7, the default integer file."],[":10",2,"<b>:10</b> = element (word) 10."]],sum:"A 16-bit integer, range \u221232,768 to 32,767. Add a bit to reach inside it: <code>N7:10/3</code>."}
+    ],
+    ref:'<table class="ref"><tr><th>File</th><th>Holds</th></tr><tr><td>O0</td><td>Outputs</td></tr><tr><td>I1</td><td>Inputs</td></tr><tr><td>S2</td><td>Processor status</td></tr><tr><td>B3</td><td>Bits</td></tr><tr><td>T4</td><td>Timers</td></tr><tr><td>C5</td><td>Counters</td></tr><tr><td>R6</td><td>Control (sequencers, shifts)</td></tr><tr><td>N7</td><td>Integers</td></tr><tr><td>F8</td><td>Floating point (SLC 5/03 and up)</td></tr></table>'
+  },
+  clx:{
+    title:"CompactLogix addressing",
+    intro:"Logix controllers use tag names instead of file numbers. Physical I/O still has a path, and you usually give it a readable alias.",
+    ex:[
+      {parts:[["Local",1,"<b>Local</b> = I/O in the controller\u2019s own chassis or rack. Remote I/O uses the module\u2019s name instead."],[":1",2,"<b>:1</b> = slot 1."],[":I",3,"<b>:I</b> = input data. <code>:O</code> is output data, <code>:C</code> is configuration."],[".Data",4,"<b>.Data</b> = the data member of that module."],[".0",3,"<b>.0</b> = bit 0, the first point."]],sum:"Slot 1 input, point 0, on a 1769 Compact I/O module. Newer 5380 controllers with 5069 I/O write this as <code>Local:1:I.Pt00.Data</code>."},
+      {parts:[["Local",1,"<b>Local</b> = local chassis."],[":2",2,"<b>:2</b> = slot 2."],[":O",3,"<b>:O</b> = output data."],[".Data",4,"<b>.Data</b> = the data member."],[".5",3,"<b>.5</b> = bit 5."]],sum:"Slot 2 output, point 5."},
+      {parts:[["Timer1",1,"<b>Timer1</b> = a tag you created with data type TIMER."],[".DN",4,"<b>.DN</b> = the done member. Every member uses a dot: <code>.EN</code>, <code>.TT</code>, <code>.PRE</code>, <code>.ACC</code>."]],sum:"Done bit of Timer1. The tag name is whatever you chose. There is no T4 file."},
+      {parts:[["Motor",1,"<b>Motor</b> = an array tag."],["[3]",2,"<b>[3]</b> = element 3. Arrays start at 0."],[".Run",4,"<b>.Run</b> = a member, if Motor is a user-defined type (UDT)."]],sum:"The Run member of the fourth motor in an array of UDTs."},
+      {parts:[["Count",1,"<b>Count</b> = a DINT tag (32-bit integer)."],[".7",3,"<b>.7</b> = bit 7 inside it. DINT bits run 0 to 31."]],sum:"Any integer tag can be read bit by bit with a dot and the bit number."}
+    ],
+    ref:'<table class="ref"><tr><th>Thing</th><th>Notes</th></tr><tr><td>BOOL</td><td>One bit</td></tr><tr><td>DINT</td><td>32-bit integer, bits .0 to .31</td></tr><tr><td>REAL</td><td>Floating point</td></tr><tr><td>TIMER</td><td>.EN .TT .DN .PRE .ACC (ms)</td></tr><tr><td>COUNTER</td><td>.CU .CD .DN .OV .UN .PRE .ACC</td></tr><tr><td>Alias</td><td>A readable name that points to another tag or I/O point</td></tr><tr><td>Scope</td><td>Controller tags work everywhere; program tags only in their program</td></tr></table>'
+  },
+  s7:{
+    title:"Siemens S7 addressing",
+    intro:"S7 addresses are an area letter, a byte number, and a bit number. Bits in a byte only go 0 to 7. TIA Portal shows absolute addresses with a % sign.",
+    ex:[
+      {parts:[["%",0,"<b>%</b> = marks an absolute address in TIA Portal. Step 7 Classic leaves it off."],["I",1,"<b>I</b> = input area. German mnemonics use <b>E</b> (Eingang)."],["0",2,"<b>0</b> = byte 0."],[".0",3,"<b>.0</b> = bit 0 of that byte."]],sum:"First input bit. After <code>%I0.7</code> comes <code>%I1.0</code>. There is no <code>%I0.8</code>."},
+      {parts:[["%",0,"<b>%</b> = absolute address."],["Q",1,"<b>Q</b> = output area. German mnemonics use <b>A</b> (Ausgang)."],["1",2,"<b>1</b> = byte 1."],[".3",3,"<b>.3</b> = bit 3."]],sum:"Output byte 1, bit 3. It is the 12th output bit counting from <code>%Q0.0</code>."},
+      {parts:[["%",0,"<b>%</b> = absolute address."],["M",1,"<b>M</b> = bit memory (internal flags)."],["W",4,"<b>W</b> = word, 16 bits. <b>B</b> = byte, <b>D</b> = double word (32 bits). No letter means a single bit."],["10",2,"<b>10</b> = the starting byte."]],sum:"Memory word made of bytes MB10 and MB11. Watch overlap: <code>%MW10</code> and <code>%MW11</code> share MB11, so use even steps like MW10, MW12."},
+      {parts:[["%",0,"<b>%</b> = absolute address."],["I",1,"<b>I</b> = input area."],["W",4,"<b>W</b> = word (16 bits)."],["64",2,"<b>64</b> = starting byte. S7-1200 analog inputs default to start at byte 64."]],sum:"An analog input value, usually 0 to 27,648 for the full signal range."},
+      {parts:[["%DB1",1,"<b>%DB1</b> = data block number 1."],[".DBX",4,"<b>.DBX</b> = a bit inside the DB. <b>DBB</b>, <b>DBW</b>, <b>DBD</b> are byte, word and double word."],["0",2,"<b>0</b> = byte 0 of the block."],[".0",3,"<b>.0</b> = bit 0."]],sum:"Absolute DB addressing only works when the block is not \u201Coptimized.\u201D Optimized blocks are reached by name, like <code>\u201CMotor_DB\u201D.Running</code>."}
+    ],
+    ref:'<table class="ref"><tr><th>Area</th><th>Holds</th></tr><tr><td>I (E)</td><td>Inputs</td></tr><tr><td>Q (A)</td><td>Outputs</td></tr><tr><td>M</td><td>Bit memory</td></tr><tr><td>DB</td><td>Data blocks</td></tr><tr><td>T, C</td><td>S5 timers and counters (S7-300/400)</td></tr><tr><td>x.y</td><td>Byte x, bit y (0 to 7)</td></tr><tr><td>B / W / D</td><td>8 / 16 / 32 bits</td></tr></table>'
+  }
+};
+
+/* ---------- Quiz data ---------- */
+var Q = {
+  slc:[
+    {q:"Which address is input slot 3, terminal 4?",o:["I:3/4","O:3/4","I:4/3","B3:3/4"],a:0,e:"<code>I</code> for input, <code>:3</code> for slot, <code>/4</code> for terminal."},
+    {q:"What is <code>T4:5/DN</code>?",o:["Done bit of timer 5 in file 4","Timer 4 with a 5 s preset","Bit 5 of timer 4","Timer 5\u2019s preset"],a:0,p:1,e:"File T4, element 5, done bit. Bits use a slash."},
+    {q:"Which address is output slot 4, terminal 12?",o:["O:4/12","I:4/12","O:12/4","B3:4/12"],a:0,e:"<code>O</code> for output, <code>:4</code> for slot, <code>/12</code> for terminal."},
+    {q:"The address <code>I:2/7</code> is found on:",o:["Input slot 2, terminal 7","Input slot 7, terminal 2","Output slot 2, terminal 7","Input slot 2, word 7"],a:0,p:1,e:"The number after the colon is the slot. The number after the slash is the terminal."},
+    {q:"The address <code>O:5/3</code> is found on:",o:["Output slot 5, terminal 3","Output slot 3, terminal 5","Input slot 5, terminal 3","Output slot 5, word 3"],a:0,p:1,e:"<code>O</code> means output, <code>:5</code> is the slot, <code>/3</code> is the terminal."},
+    {q:"Time base 0.01 s. What preset gives a 2.5 second delay?",o:["250","25","2.5","2500"],a:0,e:"2.5 \u00F7 0.01 = 250 time-base units."},
+    {q:"Which file holds integers by default?",o:["N7","B3","F8","S2"],a:0,e:"N7 is the default integer file. F8 is floating point."},
+    {q:"In an SLC 500 rack, slot 0 holds:",o:["The processor","The first input card","The power supply","The first output card"],a:0,p:1,e:"The processor sits in slot 0, so I/O cards start at slot 1."},
+    {q:"An RTO\u2019s rung goes false after 3 of 5 seconds. What happens to ACC?",o:["It holds at 3 seconds","It resets to 0","It keeps counting","It jumps to the preset"],a:0,p:1,e:"That is what makes it retentive. Only a RES clears it."}
+  ],
+  clx:[
+    {q:"<code>Timer1.ACC</code> is measured in:",o:["Milliseconds","Seconds","Hundredths of a second","Whatever time base you set"],a:0,p:1,e:"Logix timers always count in milliseconds. There is no time base."},
+    {q:"What preset gives a 3 second TON?",o:["3000","3","300","30"],a:0,e:"3 s \u00D7 1000 = 3000 ms."},
+    {q:"<code>Local:2:O.Data.5</code> is:",o:["Output module in slot 2, point 5","Input module in slot 2, point 5","Output module in slot 5, point 2","A timer\u2019s output bit"],a:0,p:1,e:"Local chassis, slot 2, output data, bit 5."},
+    {q:"Which bit is on only while a TON is counting?",o:[".TT",".EN",".DN",".ACC"],a:0,e:"TT is timer timing. EN follows the rung, DN means done."},
+    {q:"What is an alias tag?",o:["A readable name that points to another tag or I/O point","A copy of a tag\u2019s value","A tag that only works in one routine","A backup of the I/O configuration"],a:0,p:1,e:"Aliases let you write <code>Start_PB</code> instead of <code>Local:1:I.Data.0</code>."},
+    {q:"Where can a controller-scoped tag be used?",o:["In every program","Only in MainProgram","Only in the task that created it","Only in fault routines"],a:0,p:1,e:"Controller scope is global. Program-scoped tags stay inside their own program."},
+    {q:"A TOF\u2019s rung goes false. What does .DN do?",o:["Stays on until ACC reaches PRE","Turns off immediately","Turns on after the preset","Toggles each scan"],a:0,p:1,e:"That is the off delay: DN holds on while the timer counts down the delay."}
+  ],
+  s7:[
+    {q:"What input bit comes right after <code>%I0.7</code>?",o:["%I1.0","%I0.8","%I0.10","%I1.8"],a:0,e:"A byte has bits 0 to 7, so the next bit is byte 1, bit 0."},
+    {q:"Which bytes make up <code>%MW20</code>?",o:["MB20 and MB21","MB20 only","MB20 to MB23","MB19 and MB20"],a:0,e:"A word is two bytes starting at the number given."},
+    {q:"How many bits are in <code>%MD4</code>?",o:["32","16","8","4"],a:0,e:"D is a double word: 4 bytes, 32 bits."},
+    {q:"<code>%Q2.1</code> is:",o:["Output byte 2, bit 1","Output 21","Input byte 2, bit 1","Memory byte 2, bit 1"],a:0,p:1,e:"Q is the output area, then byte.bit."},
+    {q:"In German mnemonics, <code>%E0.0</code> is the same as:",o:["%I0.0","%Q0.0","%M0.0","%DB0.0"],a:0,e:"E is Eingang (input). A is Ausgang (output)."},
+    {q:"An IEC TON\u2019s output Q turns on when:",o:["ET reaches PT while IN stays on","IN turns on","IN turns off","R is pulsed"],a:0,p:1,e:"Q waits for the elapsed time to reach the preset time."},
+    {q:"Why is <code>%MW10</code> with <code>%MW11</code> a problem?",o:["They share byte MB11","MW11 is not a valid address","Words must start at multiples of 4","Nothing, they are separate"],a:0,p:1,e:"MW10 is MB10 and MB11. MW11 is MB11 and MB12. Writing one corrupts the other."}
+  ]
+};
+
+var aIdx=0, partIdx=-1;
+function buildAddressing(){
+  var a=A[state.plat];
+  document.getElementById("aTitle").textContent=a.title;
+  document.getElementById("aIntro").textContent=a.intro;
+  document.getElementById("refBox").innerHTML=a.ref;
+  if(aIdx>=a.ex.length) aIdx=0;
+  document.getElementById("addrPicker").innerHTML=a.ex.map(function(x,i){
+    return '<button data-i="'+i+'" aria-pressed="'+(i===aIdx)+'">'+esc(x.parts.map(function(p){return p[0]}).join(""))+'</button>';
+  }).join("");
+  partIdx=-1; renderAddr(); startQuiz();
+}
+function renderAddr(){
+  var ex=A[state.plat].ex[aIdx];
+  document.getElementById("parts").innerHTML=ex.parts.map(function(p,i){
+    return '<button class="k'+p[1]+'" data-p="'+i+'" aria-pressed="'+(i===partIdx)+'">'+esc(p[0])+'</button>';
+  }).join("");
+  document.getElementById("partDesc").innerHTML = partIdx<0 ? '<span class="muted">Tap each colored piece to see what it means.</span>' : ex.parts[partIdx][2];
+  document.getElementById("addrSummary").innerHTML=ex.sum;
+}
+document.getElementById("addrPicker").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; aIdx=+b.dataset.i; partIdx=-1; this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",String(x===b))}); renderAddr()});
+document.getElementById("parts").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; partIdx=+b.dataset.p; renderAddr()});
+
+/* ---------- Quiz ---------- */
+var quiz={list:[],i:0,score:0,answered:false};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function startQuiz(){quiz.list=shuffle(Q[state.plat]).map(function(q){var order=shuffle(q.o.map(function(_,i){return i}));return {q:q,order:order}}); quiz.i=0; quiz.score=0; quiz.answered=false; renderQuiz()}
+function renderQuiz(){
+  var box=document.getElementById("quiz");
+  if(quiz.i>=quiz.list.length){
+    box.innerHTML='<div class="qtext">You got '+quiz.score+' of '+quiz.list.length+'.</div><p class="muted">'+(quiz.score===quiz.list.length?"Every one right.":"Questions come in a new order each round.")+'</p><button class="next" id="qAgain">Start a new round</button>';
+    document.getElementById("qAgain").onclick=startQuiz; return;
+  }
+  var it=quiz.list[quiz.i], q=it.q;
+  box.innerHTML='<div class="qhead"><span>Question '+(quiz.i+1)+' of '+quiz.list.length+'</span><span>Score '+quiz.score+'</span></div>'+
+    '<div class="qtext">'+q.q+'</div><div class="opts">'+it.order.map(function(oi){return '<button class="'+(q.p?'plain':'')+'" data-o="'+oi+'">'+esc(q.o[oi])+'</button>'}).join("")+'</div><div class="qexp" id="qExp"></div>';
+  box.querySelector(".opts").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b||quiz.answered) return; quiz.answered=true;
+    var pick=+b.dataset.o, right=pick===q.a; if(right) quiz.score++;
+    this.querySelectorAll("button").forEach(function(x){x.disabled=true; if(+x.dataset.o===q.a) x.classList.add("right"); else if(x===b) x.classList.add("wrong")});
+    document.getElementById("qExp").innerHTML='<b>'+(right?"Right.":"Not quite.")+'</b> '+q.e+'<br><button class="next" id="qNext">'+(quiz.i+1<quiz.list.length?"Next question":"See score")+'</button>';
+    document.getElementById("qNext").onclick=function(){quiz.i++; quiz.answered=false; renderQuiz()};
+  });
+}
+
+/* ---------- Platform + view switching ---------- */
+var currentView="timers";
+function setPlat(p){
+  state.plat=p; store.set("rl-plat",p);
+  document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plat===p))});
+  buildTimers(); buildAddressing();
+}
+document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(b) setPlat(b.dataset.plat)});
+function route(force){
+  var v = force || (location.hash==="#addressing" ? "addressing" : "timers");
+  currentView=v;
+  document.getElementById("view-timers").hidden = v!=="timers";
+  document.getElementById("view-addressing").hidden = v!=="addressing";
+  document.getElementById("ctlBar").hidden = v!=="timers";
+  document.body.classList.toggle("has-bar", v==="timers");
+  document.querySelectorAll(".tabs a").forEach(function(a){ if(a.dataset.view===v) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current") });
+  if(v==="timers") last=null;
+}
+window.addEventListener("hashchange",function(){route(); window.scrollTo(0,0)});
+document.querySelector(".tabs").addEventListener("click",function(e){
+  var a=e.target.closest("a"); if(!a) return;
+  e.preventDefault();
+  var v=a.dataset.view;
+  route(v); window.scrollTo(0,0);
+  try{ if(location.hash!=="#"+v) location.hash=v; }catch(_){}
+});
+route(); setPlat(state.plat);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
