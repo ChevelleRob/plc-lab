@@ -53,8 +53,9 @@ header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(
 .brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
 .brand span{font-size:14px;opacity:.75}
 .brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
-.plats{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
-.plats button{flex:1 0 auto;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 10px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap}
+.plats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:10px}
+.plats button{grid-column:span 2;min-width:0;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 4px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plats button:nth-child(n+4){grid-column:span 3}
 .plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
 
 h2{font-size:21px;margin:22px 0 4px;font-weight:700}
@@ -148,11 +149,13 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Timers practice</span><span class="ver">v2.0</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Timers practice</span><span class="ver">v2.1</span></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
       <button data-plat="s7">Siemens S7</button>
+      <button data-plat="click">CLICK</button>
+      <button data-plat="dl06">DL06</button>
     </div>
   </div>
 </header>
@@ -217,7 +220,7 @@ var state = {
   inp:false, rst:false, acc:0,
   hist:[], t:0, lastSample:-1
 };
-if(["slc","clx","s7"].indexOf(state.plat)<0) state.plat="slc";
+if(["slc","clx","s7","click","dl06"].indexOf(state.plat)<0) state.plat="slc";
 
 /* ---------- Platform data ---------- */
 var P = {
@@ -254,6 +257,36 @@ var P = {
     preFmt:function(ms){return "T#"+(ms/1000)+"s"},
     unit:"TIME values",
     note:"<p><b>S7-1200/1500 (TIA Portal):</b> IEC timers have no EN or TT bits. You get <code>Q</code> (output) and <code>ET</code> (elapsed time), set with <code>PT</code> as a TIME like <code>T#5s</code>. Each timer needs its own instance data block.</p><p><b>Older S7-300/400:</b> the classic S5 timers do the same jobs under other names: <code>S_ODT</code> (on delay), <code>S_OFFDT</code> (off delay), <code>S_ODTS</code> (retentive on delay), using timers like <code>T1</code> and presets like <code>S5T#5S</code>.</p>"
+  },
+  click:{
+    name:"CLICK", style:"ad",
+    types:["TON","TOF","RTO"],
+    labels:{TON:"On Delay",TOF:"Off Delay",RTO:"Retentive"},
+    tNames:{TON:"Timer: On Delay",TOF:"Timer: Off Delay",RTO:"Timer: On Delay, retentive"},
+    inA:"X001", rsA:"X002", outA:"Y001", tmr:"T1", accA:"TD1", preWord:"setpoint",
+    box:function(t){return ["Timer", t==="TOF"?"Off Delay":t==="RTO"?"On Delay, retentive":"On Delay"]},
+    rows:function(ms){return [["Timer","T1"],["Setpoint",String(ms)],["Unit","ms"]]},
+    max:function(){return 32767},
+    accFmt:function(ms){return String(Math.floor(ms))},
+    preFmt:function(ms){return String(ms)},
+    unit:"ms",
+    note:"<p><b>CLICK:</b> you set up the Timer instruction in a dialog. Pick On Delay or Off Delay, a setpoint (a constant or a DS register) and a unit: ms, sec, min, hour or day. The retentive option adds a Reset input, like the RTO on the SLC 500.</p><p><code>T1</code> is the done bit and <code>TD1</code> is the current time, in the unit you picked. An on-delay timer’s TD1 keeps counting after it reaches the setpoint, up to 32,767. Use the done bit <code>T1</code> in your logic, not a test for TD1 equal to the setpoint.</p>",
+    tryMore:"<p style=\"margin-top:10px\"><b>Then:</b> leave the switch on after the lamp lights. TD1 keeps counting past the setpoint, and T1 stays on.</p>"
+  },
+  dl06:{
+    name:"DL06", style:"ad",
+    types:["TON","RTO"],
+    labels:{TON:"TMR",RTO:"TMRA"},
+    tNames:{TON:"TMR: Timer",RTO:"TMRA: Accumulating timer"},
+    inA:"X0", rsA:"X1", outA:"Y0", tmr:"T0", accA:"TA0", preWord:"preset",
+    box:function(t){return t==="RTO"?["TMRA","Accumulating, 0.1 s"]:["TMR","Timer, 0.1 s"]},
+    rows:function(ms){return [["Timer","T0"],["Preset","K"+(ms/100)]]},
+    max:function(t){return t==="RTO"?9999999900:999900},
+    accFmt:function(ms){return String(Math.floor(ms/100))},
+    preFmt:function(ms){return "K"+(ms/100)},
+    unit:"0.1 s steps",
+    note:"<p><b>DL06 (DirectSOFT):</b> <code>TMR</code> times in 0.1 s steps, so a preset of <code>K50</code> is 5.0 s. <code>TMRF</code> is the fast version, in 0.01 s steps (<code>K500</code> for 5 s). Presets are BCD constants from K0 to K9999.</p><p><code>T0</code> is the done bit and <code>TA0</code> is the current time, stored in V-memory word <code>V0</code>. TA0 keeps counting past the preset, up to 9999. <code>TMRA</code> remembers its time when its enable input goes off and has its own Reset input. It uses two timer numbers (T0 and T1) because its count is 8 BCD digits.</p><p>The DL06 has no off-delay timer instruction. Build one from a TMR that times while the input is off, and use its done bit to drop the output.</p>",
+    tryMore:"<p style=\"margin-top:10px\"><b>Then:</b> leave the switch on after the lamp lights. TA0 keeps counting past the preset, and T0 stays on.</p>"
   }
 };
 var DESC = {
@@ -281,11 +314,12 @@ function bits(){
   else {if(state.rst) en=false; tt=inp&&!state.rst&&acc<pre; dn=acc>=pre}
   return {en:en,tt:tt,dn:dn};
 }
+function cap(){var p=P[state.plat]; return (p.max && state.type!=="TOF") ? p.max(state.type) : state.pre}
 function step(dt){
   var t=state.type;
-  if(t==="TON"){ state.acc = state.inp ? Math.min(state.acc+dt,state.pre) : 0; }
+  if(t==="TON"){ state.acc = state.inp ? Math.min(state.acc+dt,cap()) : 0; }
   else if(t==="TOF"){ state.acc = state.inp ? 0 : Math.min(state.acc+dt,state.pre); }
-  else { if(state.rst) state.acc=0; else if(state.inp) state.acc=Math.min(state.acc+dt,state.pre); }
+  else { if(state.rst) state.acc=0; else if(state.inp) state.acc=Math.min(state.acc+dt,cap()); }
 }
 function resetTimer(){
   state.inp=false; state.rst=false;
@@ -312,15 +346,24 @@ function coil(x,y,id,addr,tag,inner){
 function wire(id,x1,y1,x2,y2){return '<line class="w" id="'+id+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'}
 
 function buildLadder(){
-  var p=P[state.plat], t=state.type, s7=state.plat==="s7", ret=retentive();
-  var H = (ret && !s7) ? 262 : 210, L=10, R=350, out="";
-  var inTag = state.plat==="clx" ? p.inAlias : "Start switch";
+  var p=P[state.plat], t=state.type, s7=state.plat==="s7", ad=p.style==="ad", ret=retentive();
+  var H = (ret && !s7 && !ad) ? 262 : 210, L=10, R=350, out="";
+  /* S7 TONR's reset contact sits right under the start contact, so its label would collide */
+  var inTag = state.plat==="clx" ? p.inAlias : (s7 && ret) ? "" : "Start switch";
   var rsTag = state.plat==="clx" ? p.rsAlias : "Reset button";
   var outTag = state.plat==="clx" ? p.outAlias : "Lamp";
   out+='<line class="rail" x1="'+L+'" y1="8" x2="'+L+'" y2="'+(H-8)+'"/><line class="rail" x1="'+R+'" y1="8" x2="'+R+'" y2="'+(H-8)+'"/>';
   var y=52;
   out+=wire("wInA",L,y,40,y)+contact(40,y,"cIn",p.inA,inTag)+wire("wInB",56,y,128,y);
-  if(!s7){
+  if(ad){
+    /* AutomationDirect: the timer box ends the rung; T bit and current value are read elsewhere */
+    var bx=p.box(t), ry=76;
+    out+='<rect class="box" x="128" y="22" width="160" height="104" rx="3"/>'+
+      '<text class="big" x="138" y="42">'+bx[0]+'</text><text x="138" y="58" class="tag">'+bx[1]+'</text>';
+    p.rows(state.pre).forEach(function(r){ out+='<text x="138" y="'+ry+'">'+r[0]+'</text><text class="val" x="280" y="'+ry+'" text-anchor="end">'+esc(r[1])+'</text>'; ry+=15; });
+    out+='<text x="138" y="'+ry+'">'+p.accA+'</text><text class="val" id="tAcc" x="280" y="'+ry+'" text-anchor="end"></text>';
+    if(ret){ out+=wire("wRsA",L,108,40,108)+contact(40,108,"cRs",p.rsA,"Reset button")+wire("wRsB",56,108,128,108); }
+  } else if(!s7){
     out+='<rect class="box" x="128" y="22" width="160" height="104" rx="3"/>'+
       '<text class="big" x="138" y="42">'+t+'</text><text x="138" y="58" class="tag">'+(t==="TON"?"Timer On Delay":t==="TOF"?"Timer Off Delay":"Retentive Timer On")+'</text>'+
       '<text x="138" y="76">Timer</text><text class="val" x="280" y="76" text-anchor="end">'+esc(p.tmr)+'</text>'+
@@ -342,15 +385,15 @@ function buildLadder(){
     if(ret){ out+=wire("wRsA",L,90,40,90)+contact(40,90,"cRs",p.rsA,"")+wire("wRsB",56,90,128,90); }
   }
   // Rung 2: done contact drives lamp
-  var y2 = 172, dnA = s7 ? "\u201CIEC_Timer_0_DB\u201D.Q" : p.bit("DN");
+  var y2 = 172, dnA = s7 ? "\u201CIEC_Timer_0_DB\u201D.Q" : ad ? p.tmr : p.bit("DN");
   out+=wire("wD2A",L,y2,40,y2)+contact(40,y2,"cDn",dnA,"Done")+wire("wD2B",56,y2,296,y2)+coil(296,y2,"oLamp",p.outA,outTag)+wire("wD2C",324,y2,R,y2);
   out+='<circle class="lamp" id="lampDot" cx="250" cy="'+(y2+22)+'" r="0"/>';
-  if(ret && !s7){
+  if(ret && !s7 && !ad){
     var y3=230;
     out+=wire("wR3A",L,y3,40,y3)+contact(40,y3,"cRs",p.rsA,rsTag)+wire("wR3B",56,y3,296,y3)+coil(296,y3,"oRes",p.tmr,"",'RES')+wire("wR3C",324,y3,R,y3);
   }
   document.getElementById("ladder").innerHTML='<svg viewBox="0 0 360 '+H+'" role="img" aria-label="Ladder logic for '+t+'">'+out+'</svg>';
-  document.getElementById("tPre").textContent = state.plat==="s7" ? p.preFmt(state.pre) : p.preFmt(state.pre);
+  var tPre=document.getElementById("tPre"); if(tPre) tPre.textContent = p.preFmt(state.pre);
   ladderEls = {};
   ["wInA","wInB","cInf","wEn","wEn2","iEn","iEnT","wDn","wDn2","iDn","iDnT","wQ","tAcc","wD2A","cDnf","wD2B","oLamp","wD2C","wRsA","cRsf","wRsB","wR3A","wR3B","oRes","wR3C"].forEach(function(id){ladderEls[id]=document.getElementById(id)});
 }
@@ -361,7 +404,14 @@ function lit(id,v){var e=document.getElementById(id); if(e) e.classList.toggle("
 /* ---------- Status table ---------- */
 function buildStatus(){
   var p=P[state.plat], s7=state.plat==="s7", rows;
-  if(!s7){
+  if(p.style==="ad"){
+    var past = state.type!=="TOF" ? ". Keeps counting past the "+p.preWord : "";
+    rows=[
+      ["DN",p.tmr,"Done bit: the bit your other logic uses"],
+      ["ACC",p.accA+(state.plat==="dl06"?" (V0)":""),"Current time in "+p.unit+past],
+      ["PRE",p.preWord.charAt(0).toUpperCase()+p.preWord.slice(1),"In "+p.unit]
+    ];
+  } else if(!s7){
     rows=[
       ["EN",p.bit("EN"),"Enable: follows the rung condition"],
       ["TT",p.bit("TT"),"Timer timing: on only while counting"],
@@ -431,10 +481,12 @@ function drawChart(){
   if(!w) return;
   if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
-  var s7=state.plat==="s7", ret=retentive();
-  var tr = s7 ? [["IN","inp"],["Q","dn"]] : [["IN","inp"],["EN","en"],["TT","tt"],["DN","dn"]];
-  if(ret) tr.splice(1,0,[s7?"R":"RES","rst"]);
-  tr.push([s7?"ET":"ACC","acc"]);
+  var pp=P[state.plat], s7=state.plat==="s7", ad=pp.style==="ad", ret=retentive();
+  var tr = s7 ? [["IN","inp"],["Q","dn"]] : ad ? [["IN","inp"],[pp.tmr,"dn"]] : [["IN","inp"],["EN","en"],["TT","tt"],["DN","dn"]];
+  if(ret) tr.splice(1,0,[s7?"R":ad?"Reset":"RES","rst"]);
+  tr.push([s7?"ET":ad?pp.accA:"ACC","acc"]);
+  /* Timers that count past the preset get headroom: preset line at 75% of the row */
+  var sc = (ad && state.type!=="TOF") ? 0.75 : 1;
   var left=46, rowH=h/tr.length, win=20000, t1=state.t, t0=t1-win;
   var ink=cssVar("--ink"), mut=cssVar("--muted"), live=cssVar("--live"), amber=cssVar("--amber"), red=cssVar("--red"), line=cssVar("--line");
   ctx.font='600 12px '+cssVar("--sans"); ctx.textBaseline="middle";
@@ -451,7 +503,7 @@ function drawChart(){
     var started=false, prevY=null;
     state.hist.forEach(function(p){
       var x=X(p.t); if(x<left) return;
-      var v = key==="acc" ? p.acc : (p[key]?1:0);
+      var v = key==="acc" ? Math.min(p.acc*sc,1) : (p[key]?1:0);
       var yy = bot - v*(bot-top);
       if(!started){ctx.moveTo(x,yy); started=true}
       else if(key!=="acc" && prevY!==yy){ctx.lineTo(x,prevY); ctx.lineTo(x,yy)}
@@ -459,7 +511,7 @@ function drawChart(){
       prevY=yy;
     });
     ctx.stroke();
-    if(key==="acc"){ctx.setLineDash([4,4]); ctx.strokeStyle=mut; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(left,top); ctx.lineTo(w,top); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle=mut; ctx.font='500 10px '+cssVar("--sans"); ctx.fillText("preset",left+2,top+7); ctx.font='600 12px '+cssVar("--sans")}
+    if(key==="acc"){ctx.setLineDash([4,4]); ctx.strokeStyle=mut; ctx.lineWidth=1; ctx.beginPath(); var py=bot-sc*(bot-top); ctx.moveTo(left,py); ctx.lineTo(w,py); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle=mut; ctx.font='500 10px '+cssVar("--sans"); ctx.fillText(ad?pp.preWord:"preset",left+2,py+7); ctx.font='600 12px '+cssVar("--sans")}
   });
 }
 
@@ -468,16 +520,16 @@ function buildTimers(){
   var p=P[state.plat];
   if(p.types.indexOf(state.type)<0){ state.type = state.type==="RTO"?"TONR": state.type==="TONR"?"RTO":"TON"; }
   var seg=document.getElementById("typeSeg");
-  seg.innerHTML=p.types.map(function(t){return '<button data-type="'+t+'" aria-pressed="'+(t===state.type)+'">'+t+'</button>'}).join("");
+  seg.innerHTML=p.types.map(function(t){return '<button data-type="'+t+'" aria-pressed="'+(t===state.type)+'">'+((p.labels&&p.labels[t])||t)+'</button>'}).join("");
   document.getElementById("tTitle").textContent=p.tNames[state.type];
   document.getElementById("tDesc").textContent=DESC[state.type];
-  document.getElementById("tryBox").innerHTML=TRY[state.type] + (state.type==="RTO" ? RESNOTE : "");
+  document.getElementById("tryBox").innerHTML=TRY[state.type] + (state.type==="RTO" && p.style!=="ad" ? RESNOTE : "") + (p.tryMore && state.type!=="TOF" ? p.tryMore : "");
   document.getElementById("platNote").innerHTML=p.note;
   document.getElementById("inAddr").textContent = p.inA;
   document.getElementById("rstAddr").textContent = p.rsA;
   document.getElementById("pLampA").textContent = p.outA;
-  var bl = state.plat==="s7" ? ["Q"] : ["EN","TT","DN"];
-  document.getElementById("pBits").innerHTML = bl.map(function(k){return '<span class="bl"><i id="pl'+k+'"></i>'+k+'</span>'}).join("");
+  var ad = p.style==="ad", bl = state.plat==="s7" ? ["Q"] : ad ? [p.tmr] : ["EN","TT","DN"];
+  document.getElementById("pBits").innerHTML = bl.map(function(k){return '<span class="bl"><i id="pl'+(ad?"Q":k)+'"></i>'+k+'</span>'}).join("");
   document.getElementById("rstPb").hidden=!retentive();
   resetTimer(); buildLadder(); buildStatus(); render();
 }
@@ -502,14 +554,14 @@ pb.addEventListener("contextmenu",function(e){e.preventDefault()});
 
 /* ---------- Platform switching ---------- */
 var currentView="timers";
-function setPlat(p){
-  state.plat=p; store.set("rl-plat",p);
+function setPlat(p,init){
+  state.plat=p; if(!init) store.set("rl-plat",p);
   document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plat===p))});
   buildTimers();
 }
 document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(b) setPlat(b.dataset.plat)});
 document.body.classList.add("has-bar");
-setPlat(state.plat);
+setPlat(state.plat,true);
 requestAnimationFrame(loop);
 })();
 </script>

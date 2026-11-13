@@ -12,7 +12,7 @@ developed and will be added soon.
 | Tool | Folder | What it covers |
 |------|--------|----------------|
 | Addressing | [`addressing/`](addressing/) | How addresses are built on each platform: tap-to-explain breakdowns, a side-by-side comparison of all five PLCs, quick reference and a quiz |
-| Timers | [`timers/`](timers/) | TON / TOF / RTO (TONR) on a live rung with a timing diagram |
+| Timers | [`timers/`](timers/) | On-delay, off-delay and retentive timers on a live rung with a timing diagram, for all five PLCs |
 
 ## Who it's for
 

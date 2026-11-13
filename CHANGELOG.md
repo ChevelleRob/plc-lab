@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v1.3** Timers card: v2.1, lists CLICK and DL06
 - **v1.2** Addressing card: v1.1, lists CLICK and DL06
 - **v1.1** Timers & Addressing split into two cards: Addressing and Timers
 - **v1.0** First version: home page linking to each tool
@@ -18,6 +19,7 @@ Each tool has its own version number, shown in its header bar.
 
 Called "Timers & Addressing" through v1.7.
 
+- **v2.1** Added CLICK (On Delay, Off Delay, Retentive) and DirectLOGIC DL06 (TMR, TMRA). Their current values keep counting past the preset, and the timing diagram leaves room to show it. Platform buttons now sit in two rows. Fixed the S7 TONR rung, where the "Start switch" label overlapped the reset address
 - **v2.0** Addressing moved to its own tool; renamed "Timers". Old `timers/#addressing` links forward to the Addressing tool
 
 - **v1.7** "PLC Lab" title in the header is now a link back to the home page
