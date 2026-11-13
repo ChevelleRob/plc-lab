@@ -260,7 +260,7 @@ var P = {
     info:function(n){return [["Counter","CT1"],["Setpoint",String(n)]]},
     preFmt:function(n){return String(n)},
     min:-2147483648, max:function(){return 2147483647},
-    note:"<p><b>CLICK:</b> you set up the Counter instruction in a dialog: count up, count down or both, and a setpoint (a constant or a register). Every CLICK counter has a Reset input.</p><p><code>CT1</code> is the done bit, on when <code>CTD1</code> ≥ the setpoint. CTD1 is the 32-bit current count, and it keeps counting past the setpoint.</p>"
+    note:"<p><b>CLICK:</b> you set up the Counter instruction in a dialog: count up, count down or both, and a setpoint (a constant or a register). Every CLICK counter has a Reset input.</p><p><code>CT1</code> is the done bit, on when <code>CTD1</code> ≥ the setpoint. CTD1 is a signed 32-bit count. It keeps counting past the setpoint, and counting down past 0 takes it negative.</p>"
   },
   dl06:{
     name:"DL06", style:"ad",
@@ -271,7 +271,7 @@ var P = {
     info:function(n){return [["Counter","CT0"],["Preset","K"+n]]},
     preFmt:function(n){return "K"+n},
     min:0, max:function(t){return t==="UPDN"?99999999:9999},
-    note:"<p><b>DL06 (DirectSOFT):</b> <code>CNT</code> has a count input and a reset input. <code>CT0</code> is the done bit, on when <code>CTA0</code> ≥ the preset. CTA0 is stored in V-memory word <code>V1000</code> and counts up to 9999, in BCD. Presets are constants like <code>K10</code>.</p><p><code>UDC</code> is the up/down counter, with up, down and reset inputs. It uses two counter numbers (CT0 and CT1) because its count is 8 BCD digits, up to 99999999. The DL06 has no down-only counter.</p><p><code>SGCNT</code>, the stage counter, counts up with no reset input. You clear it with an RST instruction.</p>"
+    note:"<p><b>DL06 (DirectSOFT):</b> <code>CNT</code> has a count input and a reset input. <code>CT0</code> is the done bit, on when <code>CTA0</code> ≥ the preset. CTA0 is stored in V-memory word <code>V1000</code> and counts up to 9999, in BCD. Presets are constants like <code>K10</code>.</p><p><code>UDC</code> is the up/down counter, with up, down and reset inputs. It uses two counter numbers (CT0 and CT1) because its count is 8 BCD digits, up to 99999999. The DL06 has no down-only counter.</p><p><b>Below zero:</b> DL06 counts are never negative. On a real UDC, counting down past 0 wraps the count around to the top of its range. This sim stops at 0 instead.</p><p><code>SGCNT</code>, the stage counter, counts up with no reset input. You clear it with an RST instruction.</p>"
   }
 };
 var DESC = {
