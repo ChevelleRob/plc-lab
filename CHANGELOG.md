@@ -9,6 +9,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Timers & Addressing (`timers/`)
 
+- **v1.7** "PLC Lab" title in the header is now a link back to the home page
 - **v1.6** Renamed from Rung Lab to PLC Lab
 - **v1.5** Tabs switch directly on tap (more reliable Addressing tab); version number added
 - **v1.4** Note on RES above vs below the RTO
