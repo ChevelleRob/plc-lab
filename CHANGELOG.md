@@ -5,11 +5,13 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v1.2** Addressing card: v1.1, lists CLICK and DL06
 - **v1.1** Timers & Addressing split into two cards: Addressing and Timers
 - **v1.0** First version: home page linking to each tool
 
 ## Addressing (`addressing/`)
 
+- **v1.1** Added CLICK and DirectLOGIC DL06 (breakdowns, quick reference, quiz). New Compare view: a table of the same addresses across all five PLCs, with the left column fixed and the rest scrolling sideways. Platform buttons now sit in a 3 × 2 grid
 - **v1.0** Split out of Timers & Addressing v1.7 as its own tool. Same content: address breakdowns, quick reference and quiz for SLC 500, CompactLogix and S7
 
 ## Timers (`timers/`)

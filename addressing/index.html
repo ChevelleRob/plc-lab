@@ -53,8 +53,9 @@ header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(
 .brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
 .brand span{font-size:14px;opacity:.75}
 .brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
-.plats{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
-.plats button{flex:1 0 auto;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 10px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap}
+.plats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.plats button{min-width:0;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 4px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plats button.cmpbtn{border-style:dashed}
 .plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
 
 h2{font-size:21px;margin:22px 0 4px;font-weight:700}
@@ -86,6 +87,24 @@ p{margin:6px 0}
 .ref td:first-child{font-family:var(--mono);color:var(--c1);white-space:nowrap}
 .scroll{overflow-x:auto}
 
+/* Comparison table: first column stays put, the rest scroll sideways */
+.cmpwrap{overflow-x:auto;margin-top:12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);-webkit-overflow-scrolling:touch}
+.cmp{border-collapse:separate;border-spacing:0;font-size:15px;min-width:100%}
+.cmp th,.cmp td{padding:8px 10px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+.cmp thead th{border-top:0;background:var(--surface2);font-weight:700;white-space:nowrap}
+.cmp td{min-width:150px;border-left:1px solid var(--line)}
+.cmp td code{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--c1);white-space:nowrap}
+.cmp td small{display:block;color:var(--muted);font-size:13px;line-height:1.3;margin-top:2px}
+.cmp .rh{position:sticky;left:0;z-index:1;background:var(--surface2);width:112px;min-width:112px;max-width:112px;font-weight:600;font-size:14px;line-height:1.3;box-shadow:2px 0 0 var(--line)}
+.cmp thead .rh{z-index:2}
+.cmp tr.grp th{background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:12px 10px 4px}
+.cmp tr.grp td{background:var(--bg);border-left:0}
+.cmp tr.grp + tr th,.cmp tr.grp + tr td{border-top:0}
+.cmp tr.key td{background:var(--c2bg)}
+.swipe{font-size:14px;margin-top:6px}
+.cmp td b{display:block;font-weight:700}
+body.wide .wrap{max-width:1040px}
+
 .quiz{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
 .qhead{display:flex;justify-content:space-between;color:var(--muted);font-size:14px}
 .qtext{font-size:18px;font-weight:600;margin:8px 0 12px}
@@ -105,11 +124,14 @@ p{margin:6px 0}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.0</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.1</span></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
       <button data-plat="s7">Siemens S7</button>
+      <button data-plat="click">CLICK</button>
+      <button data-plat="dl06">DL06</button>
+      <button data-plat="cmp" class="cmpbtn">Compare</button>
     </div>
   </div>
 </header>
@@ -131,6 +153,13 @@ p{margin:6px 0}
     <h3>Check yourself</h3>
     <div class="quiz" id="quiz"></div>
   </section>
+
+  <section id="view-compare" hidden>
+    <h2>Compare all five</h2>
+    <p class="muted">The same jobs, written five ways. SLC 500 and CompactLogix examples assume an input card in slot 1 and an output card in slot 2. The highlighted row is the one that trips people up.</p>
+    <p class="swipe muted" id="swipeHint" hidden>Swipe the table sideways to see all five PLCs →</p>
+    <div class="cmpwrap" id="cmpBox"></div>
+  </section>
 </main>
 
 <script>
@@ -143,7 +172,7 @@ var store = {
 var state = {
   plat: store.get("rl-plat") || "slc"
 };
-if(["slc","clx","s7"].indexOf(state.plat)<0) state.plat="slc";
+if(["slc","clx","s7","click","dl06","cmp"].indexOf(state.plat)<0) state.plat="slc";
 
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
 
@@ -184,6 +213,30 @@ var A = {
       {parts:[["%DB1",1,"<b>%DB1</b> = data block number 1."],[".DBX",4,"<b>.DBX</b> = a bit inside the DB. <b>DBB</b>, <b>DBW</b>, <b>DBD</b> are byte, word and double word."],["0",2,"<b>0</b> = byte 0 of the block."],[".0",3,"<b>.0</b> = bit 0."]],sum:"Absolute DB addressing only works when the block is not \u201Coptimized.\u201D Optimized blocks are reached by name, like <code>\u201CMotor_DB\u201D.Running</code>."}
     ],
     ref:'<table class="ref"><tr><th>Area</th><th>Holds</th></tr><tr><td>I (E)</td><td>Inputs</td></tr><tr><td>Q (A)</td><td>Outputs</td></tr><tr><td>M</td><td>Bit memory</td></tr><tr><td>DB</td><td>Data blocks</td></tr><tr><td>T, C</td><td>S5 timers and counters (S7-300/400)</td></tr><tr><td>x.y</td><td>Byte x, bit y (0 to 7)</td></tr><tr><td>B / W / D</td><td>8 / 16 / 32 bits</td></tr></table>'
+  },
+  click:{
+    title:"CLICK addressing",
+    intro:"AutomationDirect CLICK PLCs use a letter for the memory type and a number. I/O numbers carry the slot in the first digit and the point (01 to 16, in decimal) in the last two.",
+    ex:[
+      {parts:[["X",1,"<b>X</b> = a physical input."],["1",2,"<b>1</b> = slot 1, the first I/O module to the right of the CPU. Slot <b>0</b> is the CPU\u2019s own inputs."],["01",3,"<b>01</b> = point 1 on that module. Points are numbered 01 to 16, in decimal."]],sum:"Input module in slot 1, point 1. Points start at 01, so there is no <code>X100</code>. The CPU\u2019s own inputs are <code>X001</code>, <code>X002</code> and so on."},
+      {parts:[["Y",1,"<b>Y</b> = a physical output."],["0",2,"<b>0</b> = slot 0, the CPU\u2019s own outputs."],["04",3,"<b>04</b> = point 4."]],sum:"Fourth output on the CPU. An output module in slot 2 would start at <code>Y201</code>."},
+      {parts:[["C",1,"<b>C</b> = control relay, an internal bit with no wiring."],["25",2,"<b>25</b> = relay number 25. Control relays run C1 to C2000, in decimal."]],sum:"An internal bit, like a B3 bit on the SLC 500 or an M bit on S7."},
+      {parts:[["TD",4,"<b>TD</b> = timer data: the timer\u2019s current (elapsed) time."],["1",2,"<b>1</b> = timer number 1."]],sum:"Current time of timer <code>T1</code>. <code>T1</code> by itself is the timer\u2019s done bit. TD1 counts in the unit picked in the Timer instruction: ms, sec, min, hour or day. Counters work the same way: <code>CT1</code> is the done bit and <code>CTD1</code> is the count."},
+      {parts:[["DS",1,"<b>DS</b> = data single: a 16-bit signed integer, \u221232,768 to 32,767."],["10",2,"<b>10</b> = register 10. Registers start at 1."]],sum:"A 16-bit integer register, like <code>N7:10</code> on the SLC 500. Other data types: <code>DD</code> is a 32-bit integer, <code>DH</code> is 16-bit hex, <code>DF</code> is floating point."}
+    ],
+    ref:'<table class="ref"><tr><th>Type</th><th>Holds</th></tr><tr><td>X</td><td>Inputs: slot digit + point 01\u201316 (X001, X101\u2026)</td></tr><tr><td>Y</td><td>Outputs, numbered like X</td></tr><tr><td>C</td><td>Control relays (internal bits), C1\u2013C2000</td></tr><tr><td>T / TD</td><td>Timer done bits / current values, 1\u2013500</td></tr><tr><td>CT / CTD</td><td>Counter done bits / current counts, 1\u2013250</td></tr><tr><td>DS</td><td>16-bit integers, DS1\u2013DS4500</td></tr><tr><td>DD</td><td>32-bit integers, DD1\u2013DD1000</td></tr><tr><td>DH</td><td>16-bit hex words, DH1\u2013DH500</td></tr><tr><td>DF</td><td>Floating point, DF1\u2013DF500</td></tr><tr><td>XD / YD</td><td>Inputs / outputs read as 16-bit words</td></tr><tr><td>SC / SD</td><td>System bits / system data (SC1 always on, SC2 first scan)</td></tr></table>'
+  },
+  dl06:{
+    title:"DirectLOGIC DL06 addressing",
+    intro:"DirectLOGIC PLCs number almost everything in octal: 0 to 7, then 10. There is never an 8 or a 9 in an address. A letter tells you the memory type.",
+    ex:[
+      {parts:[["X",1,"<b>X</b> = a discrete input."],["10",3,"<b>10</b> = point 10 in <b>octal</b>, which is the ninth input. Octal counts 0 to 7, then 10."]],sum:"Ninth built-in input. The count goes X6, X7, X10, X11. There is no <code>X8</code> or <code>X9</code>. The DL06\u2019s 20 built-in inputs are X0 to X23."},
+      {parts:[["Y",1,"<b>Y</b> = a discrete output."],["17",3,"<b>17</b> = point 17 in octal, which is 15 in decimal."]],sum:"The last of the DL06\u2019s 16 built-in outputs, Y0 to Y17. Counting starts at Y0, so Y17 is the 16th."},
+      {parts:[["C",1,"<b>C</b> = control relay, an internal bit."],["100",2,"<b>100</b> = relay 100 in octal (64 in decimal). C0 to C1777 gives 1,024 relays."]],sum:"An internal bit. Addresses are octal everywhere on a DirectLOGIC PLC, not just for I/O."},
+      {parts:[["TA",4,"<b>TA</b> = timer accumulator: the current time."],["0",2,"<b>0</b> = timer 0. Timer numbers start at 0."]],sum:"Current time of timer <code>T0</code>, stored in V-memory word <code>V0</code>. <code>T0</code> by itself is the done bit. With <code>TMR</code> (0.1 s steps), TA0 = 50 means 5.0 s. Counters use <code>CT0</code> and <code>CTA0</code>, stored in <code>V1000</code>."},
+      {parts:[["V",1,"<b>V</b> = V-memory, the DL06\u2019s 16-bit data words."],["2000",2,"<b>2000</b> = word 2000, in octal."]],sum:"A 16-bit data word in user memory. Values are often stored as BCD, so 1234 in BCD is not the same bit pattern as 1234 in binary. A 32-bit value takes two words: <code>V2000</code> and <code>V2001</code>."}
+    ],
+    ref:'<table class="ref"><tr><th>Type</th><th>Holds (all octal)</th></tr><tr><td>X</td><td>Inputs, X0\u2013X777 (built in: X0\u2013X23)</td></tr><tr><td>Y</td><td>Outputs, Y0\u2013Y777 (built in: Y0\u2013Y17)</td></tr><tr><td>C</td><td>Control relays, C0\u2013C1777</td></tr><tr><td>S</td><td>Stages, S0\u2013S1777</td></tr><tr><td>T / TA</td><td>Timer done bits / current values, 0\u2013377 (values in V0\u2013V377)</td></tr><tr><td>CT / CTA</td><td>Counter done bits / current counts, 0\u2013177 (values in V1000\u2013V1177)</td></tr><tr><td>SP</td><td>Special relays (SP0 first scan, SP1 always on)</td></tr><tr><td>V</td><td>16-bit data words. User data: V1200\u2013V7377, V10000\u2013V17777</td></tr><tr><td>K</td><td>A constant, e.g. K50</td></tr></table>'
   }
 };
 
@@ -217,6 +270,24 @@ var Q = {
     {q:"In German mnemonics, <code>%E0.0</code> is the same as:",o:["%I0.0","%Q0.0","%M0.0","%DB0.0"],a:0,e:"E is Eingang (input). A is Ausgang (output)."},
     {q:"An IEC TON\u2019s output Q turns on when:",o:["ET reaches PT while IN stays on","IN turns on","IN turns off","R is pulsed"],a:0,p:1,e:"Q waits for the elapsed time to reach the preset time."},
     {q:"Why is <code>%MW10</code> with <code>%MW11</code> a problem?",o:["They share byte MB11","MW11 is not a valid address","Words must start at multiples of 4","Nothing, they are separate"],a:0,p:1,e:"MW10 is MB10 and MB11. MW11 is MB11 and MB12. Writing one corrupts the other."}
+  ],
+  click:[
+    {q:"Which address is the third input on the CPU itself?",o:["X003","X103","X3","X002"],a:0,e:"Slot 0 is the CPU, and points start at 01: X001, X002, X003."},
+    {q:"<code>X205</code> is:",o:["Input module in slot 2, point 5","Input module in slot 5, point 2","Input 205 on the CPU","Output module in slot 2, point 5"],a:0,p:1,e:"The first digit is the slot. The last two digits are the point."},
+    {q:"What is the first input on the module in slot 1?",o:["X101","X100","X110","X001"],a:0,e:"Points start at 01, so the first point is X101. There is no X100."},
+    {q:"Where is the current time of timer <code>T3</code>?",o:["TD3","T3","DS3","CTD3"],a:0,e:"TD3. <code>T3</code> by itself is the done bit."},
+    {q:"Which register type holds a 16-bit signed integer?",o:["DS","DD","DF","DH"],a:0,e:"DS is 16-bit, DD is 32-bit, DF is floating point, DH is hex."},
+    {q:"Which register type holds a floating point number?",o:["DF","DS","DD","DH"],a:0,e:"DF is floating point, like F8 on the SLC 500 or REAL in Logix."},
+    {q:"<code>C25</code> is:",o:["An internal control relay","Counter 25","Input 25 on the CPU","A constant of 25"],a:0,p:1,e:"C is a control relay. Counters use CT."}
+  ],
+  dl06:[
+    {q:"Which input comes right after <code>X7</code>?",o:["X10","X8","X07","X11"],a:0,e:"Octal has no 8 or 9, so after 7 comes 10."},
+    {q:"How many inputs are in X0 through X17?",o:["16","18","17","20"],a:0,p:1,e:"X0\u2013X7 is 8 inputs and X10\u2013X17 is 8 more. 17 in octal is 15 in decimal, plus point 0."},
+    {q:"The DL06\u2019s 20 built-in inputs end at:",o:["X23","X19","X20","X24"],a:0,e:"Counting 20 points in octal: X0\u2013X7, X10\u2013X17, X20\u2013X23."},
+    {q:"Where is the current time of timer <code>T5</code>?",o:["TA5","T5","CTA5","V1005"],a:0,e:"TA5, which is V-memory word V5. <code>T5</code> by itself is the done bit."},
+    {q:"<code>TMR T0 K50</code> times for:",o:["5.0 seconds","50 seconds","0.5 seconds","50 milliseconds"],a:0,p:1,e:"TMR counts in 0.1 s steps: 50 \u00D7 0.1 s = 5.0 s."},
+    {q:"Which address is an internal control relay?",o:["C10","X10","Y10","V10"],a:0,e:"C is a control relay. X and Y are wired I/O. V is a data word."},
+    {q:"DL06 addresses are numbered in:",o:["Octal","Decimal","Hexadecimal","BCD"],a:0,p:1,e:"Addresses are octal. BCD is how data <i>values</i> are often stored, which is a separate idea."}
   ]
 };
 
@@ -265,11 +336,55 @@ function renderQuiz(){
   });
 }
 
+/* ---------- Comparison table ---------- */
+var CMP_COLS=["SLC 500","CompactLogix","Siemens S7","CLICK","DL06"];
+/* Each cell: [address, note]. A group row is just a string. */
+var CMP=[
+  "Counting",
+  ["Number base",[["Decimal","Bits 0\u201315 in each word"],["Decimal","Bits 0\u201331 in a DINT"],["Byte.bit","Bits 0\u20137, then the next byte"],["Decimal","Points 01\u201316 on each module"],["Octal","0\u20137, then 10. No 8 or 9"]],"plain"],
+  ["The input after point 7",[["I:1/8",""],["Local:1:I.Data.8",""],["%I1.0","New byte"],["X008",""],["X10","Octal"]],"key"],
+  "Inputs and outputs",
+  ["First input",[["I:1/0","Card in slot 1"],["Local:1:I.Data.0","Module in slot 1"],["%I0.0","On the CPU"],["X001","On the CPU"],["X0","On the CPU"]]],
+  ["First output",[["O:2/0","Card in slot 2"],["Local:2:O.Data.0","Module in slot 2"],["%Q0.0","On the CPU"],["Y001","On the CPU"],["Y0","On the CPU"]]],
+  ["First input on an add-on module",[["I:3/0","Card in slot 3"],["Local:3:I.Data.0","Module in slot 3"],["%I8.0","Default for the first signal module. Set in Device configuration"],["X101","Module in slot 1"],["X100","Option card in slot 1"]]],
+  ["All 16 inputs as one word",[["I:1.0","Word 0 of slot 1"],["Local:1:I.Data","The whole DINT"],["%IW0","Bytes 0 and 1"],["XD0","CPU inputs"],["V40400","X0\u2013X17"]]],
+  "Internal memory",
+  ["Internal bit",[["B3:0/0",""],["Run_Flag","Any BOOL tag"],["%M0.0",""],["C1",""],["C0",""]]],
+  ["First-scan bit",[["S:1/15",""],["S:FS",""],["%M1.0","If the system memory byte is set to MB1"],["SC2",""],["SP0",""]]],
+  "Timers",
+  ["Done bit",[["T4:0/DN",""],["Timer1.DN",""],["\u201CIEC_Timer_0_DB\u201D.Q",""],["T1",""],["T0",""]]],
+  ["Current time",[["T4:0.ACC",""],["Timer1.ACC",""],["\u201CIEC_Timer_0_DB\u201D.ET",""],["TD1",""],["TA0","Same word as V0"]]],
+  ["Preset",[["T4:0.PRE",""],["Timer1.PRE",""],["PT","A TIME, e.g. T#5s"],["Setpoint","A constant or a DS register",1],["K50","A BCD constant"]]],
+  ["Time units",[["0.01 s or 1.0 s","Set by the time base"],["ms","Always milliseconds"],["TIME","T#5s, T#200ms"],["ms to days","Chosen in the Timer box"],["0.1 s or 0.01 s","TMR or TMRF"]],"plain"],
+  "Counters",
+  ["Done bit",[["C5:0/DN",""],["Counter1.DN",""],["\u201CIEC_Counter_0_DB\u201D.Q",""],["CT1",""],["CT0",""]]],
+  ["Current count",[["C5:0.ACC",""],["Counter1.ACC",""],["\u201CIEC_Counter_0_DB\u201D.CV",""],["CTD1",""],["CTA0","Same word as V1000"]]],
+  "Numbers",
+  ["16-bit integer",[["N7:0",""],["INT tag","DINT is the usual choice",1],["%MW0",""],["DS1",""],["V2000","Often holds BCD"]]],
+  ["32-bit integer",[["\u2014","No 32-bit integer file",1],["DINT tag","",1],["%MD0",""],["DD1",""],["V2000 + V2001","Two words"]]],
+  ["Floating point",[["F8:0","SLC 5/03 and up"],["REAL tag","",1],["%MD0","As a Real"],["DF1",""],["V2000 + V2001","Two words, real format"]]]
+];
+function buildCompare(){
+  var h='<table class="cmp"><thead><tr><th class="rh" scope="col">Address for\u2026</th>'+CMP_COLS.map(function(c){return '<th scope="col">'+c+'</th>'}).join("")+'</tr></thead><tbody>';
+  CMP.forEach(function(r){
+    if(typeof r==="string"){ h+='<tr class="grp"><th class="rh" scope="rowgroup">'+r+'</th>'+CMP_COLS.map(function(){return '<td></td>'}).join("")+'</tr>'; return; }
+    h+='<tr'+(r[2]?' class="'+r[2]+'"':'')+'><th class="rh" scope="row">'+r[0]+'</th>'+r[1].map(function(c){return '<td>'+(r[2]==="plain"||c[2]?'<b>'+esc(c[0])+'</b>':'<code>'+esc(c[0])+'</code>')+(c[1]?'<small>'+c[1]+'</small>':'')+'</td>'}).join("")+'</tr>';
+  });
+  document.getElementById("cmpBox").innerHTML=h+'</tbody></table>';
+  swipeHint();
+}
+function swipeHint(){var b=document.getElementById("cmpBox"); document.getElementById("swipeHint").hidden = b.scrollWidth<=b.clientWidth+2;}
+window.addEventListener("resize",function(){ if(state.plat==="cmp") swipeHint(); });
+
 /* ---------- Platform switching ---------- */
 function setPlat(p){
   state.plat=p; store.set("rl-plat",p);
   document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plat===p))});
-  buildAddressing();
+  var cmp = p==="cmp";
+  document.getElementById("view-addressing").hidden = cmp;
+  document.getElementById("view-compare").hidden = !cmp;
+  document.body.classList.toggle("wide",cmp);
+  if(cmp) buildCompare(); else buildAddressing();
 }
 document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(b) setPlat(b.dataset.plat)});
 setPlat(state.plat);

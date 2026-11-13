@@ -1,7 +1,7 @@
 # PLC Lab
 
 Browser-based practice tools for a PLC class covering Allen-Bradley SLC 500,
-CompactLogix and Siemens S7. Each tool runs right in the browser with nothing
+CompactLogix, Siemens S7, AutomationDirect CLICK and DirectLOGIC DL06. Each tool runs right in the browser with nothing
 to install, so students can use it on a phone or a laptop. New tools are being
 developed and will be added soon.
 
@@ -11,7 +11,7 @@ developed and will be added soon.
 
 | Tool | Folder | What it covers |
 |------|--------|----------------|
-| Addressing | [`addressing/`](addressing/) | How addresses are built on each platform: tap-to-explain breakdowns, quick reference and a quiz |
+| Addressing | [`addressing/`](addressing/) | How addresses are built on each platform: tap-to-explain breakdowns, a side-by-side comparison of all five PLCs, quick reference and a quiz |
 | Timers | [`timers/`](timers/) | TON / TOF / RTO (TONR) on a live rung with a timing diagram |
 
 ## Who it's for

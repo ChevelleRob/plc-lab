@@ -1,7 +1,7 @@
 # Notes for Claude
 
 PLC Lab is a set of single-file practice tools for a PLC class (SLC 500,
-CompactLogix, Siemens S7), published with GitHub Pages from `main`.
+CompactLogix, Siemens S7, CLICK, DirectLOGIC DL06), published with GitHub Pages from `main`.
 The README is for students and visitors; maintenance rules live here.
 
 ## Rules for every change
