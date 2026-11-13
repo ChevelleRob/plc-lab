@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v1.4** Added the Counters card
 - **v1.3** Timers card: v2.1, lists CLICK and DL06
 - **v1.2** Addressing card: v1.1, lists CLICK and DL06
 - **v1.1** Timers & Addressing split into two cards: Addressing and Timers
@@ -30,3 +31,7 @@ Called "Timers & Addressing" through v1.7.
 - **v1.2** Timing diagram label "Rung" -> "IN"; SLC quiz: B3 question replaced with 3 slot/terminal questions
 - **v1.1** Switch, reset and indicators moved to fixed bottom bar
 - **v1.0** First version: timers (TON/TOF/RTO, TONR) and addressing for SLC 500, CompactLogix, S7
+
+## Counters (`counters/`)
+
+- **v1.0** First version: up, down and up/down counters on a live rung with a timing diagram, for SLC 500 (CTU, CTD, RES), CompactLogix (CTU, CTD, RES), Siemens S7 (CTU, CTD, CTUD), CLICK (Count Up, Up/Down) and DirectLOGIC DL06 (CNT, UDC)

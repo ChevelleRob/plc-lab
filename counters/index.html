@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab: PLC counters practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --wire:#8A939A; --live:#178F4C; --liveglow:rgba(23,143,76,.22);
+  --amber:#B97C00; --red:#C13D2B; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5; --c2:#9A6400; --c2bg:#F6E7C8; --c3:#177A45; --c3bg:#D6EEDF; --c4:#7A3C99; --c4bg:#EBDDF2;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+    --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+  --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+/* Header: a nameplate, like an engraved panel tag */
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand h1 a{color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:5px;padding:4px 0}
+.brand h1 a::before{content:"\2039";opacity:.6;font-weight:600}
+.brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+.plats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:10px}
+.plats button{grid-column:span 2;min-width:0;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 4px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plats button:nth-child(n+4){grid-column:span 3}
+.plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+h3{font-size:17px;margin:20px 0 6px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.seg{display:flex;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-weight:600;cursor:pointer;border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+
+/* Ladder: the one bold element */
+.ladder{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;margin-top:14px;padding:6px 2px}
+.ladder svg{display:block;width:100%;height:auto}
+.ladder .rail{stroke:var(--live);stroke-width:4}
+.ladder .w{stroke:var(--wire);stroke-width:2.5;fill:none;transition:stroke .08s}
+.ladder .w.on{stroke:var(--live);stroke-width:3.5;filter:drop-shadow(0 0 3px var(--liveglow))}
+.ladder .cb{stroke:var(--ink);stroke-width:2.5}
+.ladder .cfill{fill:transparent}
+.ladder .cfill.on{fill:var(--live)}
+.ladder .coil{fill:none;stroke:var(--ink);stroke-width:2.5}
+.ladder .coil.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .box{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder text{fill:var(--ink);font-family:var(--sans);font-size:12px}
+.ladder .addr{font-family:var(--mono);font-size:10.5px;fill:var(--c1)}
+.ladder .tag{font-size:11px;fill:var(--muted)}
+.ladder .big{font-weight:700;font-size:15px}
+.ladder .val{font-family:var(--mono);font-size:12px;font-weight:700}
+.ladder .ind{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .ind.on{fill:var(--live);stroke:var(--live)}
+.ladder .indt{font-size:10px;font-weight:700}
+.ladder .indt.on{fill:#fff}
+.lamp{fill:var(--surface2);stroke:var(--ink);stroke-width:1.5}
+.lamp.on{fill:var(--live);filter:drop-shadow(0 0 6px var(--live))}
+
+/* Controls */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);color:var(--onpanel);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 12px rgba(0,0,0,.25)}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inds{display:flex;align-items:center;gap:14px;min-width:0}
+.pilot{display:flex;align-items:center;gap:8px}
+.pilot b{display:block;font-size:14px}
+.pilot small{display:block;font-family:var(--mono);font-size:11px;opacity:.75}
+.plamp{width:40px;height:40px;border-radius:50%;flex:none;background:#3A4650;box-shadow:inset 0 0 0 3px rgba(255,255,255,.15);transition:background .08s}
+.plamp.on{background:var(--live);box-shadow:0 0 16px var(--live)}
+.bits{display:flex;gap:8px}
+.bl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
+.bl i{width:16px;height:16px;border-radius:50%;background:#3A4650;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+.bl i.on{background:var(--live);box-shadow:0 0 8px var(--live)}
+.acts{display:flex;gap:14px;flex:none}
+.bar .switch,.bar .pb{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .knob{width:44px;height:44px;background:#1A2228}
+.bar .pb .cap{width:44px;height:44px}
+.bar .switch b,.bar .pb b{font-size:13px}
+.bar .switch small,.bar .pb small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.switch{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left}
+.knob{width:46px;height:46px;border-radius:50%;background:var(--panel);position:relative;flex:none;box-shadow:inset 0 0 0 3px var(--wire)}
+.knob::after{content:"";position:absolute;left:50%;top:7px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:var(--onpanel);transform:rotate(-40deg);transform-origin:50% 16px;transition:transform .15s}
+.switch[aria-pressed="true"] .knob::after{transform:rotate(40deg)}
+.switch[aria-pressed="true"] .knob{box-shadow:inset 0 0 0 3px var(--live)}
+.switch b{display:block;font-size:16px}
+.switch small{color:var(--muted);font-size:13px}
+.pb{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;user-select:none;-webkit-user-select:none;touch-action:none}
+.pb .cap{width:46px;height:46px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 4px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb.held .cap{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb b{display:block;font-size:16px}
+.pb small{color:var(--muted);font-size:13px}
+
+.status{width:100%;border-collapse:collapse;margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;font-size:15px}
+.status td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+.status tr:first-child td{border-top:0}
+.status td:first-child{font-family:var(--mono);font-size:13px;color:var(--c1);white-space:nowrap}
+.status td.v{font-family:var(--mono);font-weight:700;white-space:nowrap;width:5.5em}
+.bit{display:inline-block;min-width:2.2em;text-align:center;border-radius:4px;padding:0 4px;background:var(--surface2);color:var(--muted)}
+.bit.on{background:var(--live);color:#fff}
+.status td.m{color:var(--muted);font-size:14px}
+
+.chartbox{margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.chartbox canvas{display:block;width:100%;height:210px}
+.note{margin-top:14px;padding:12px 14px;border-left:4px solid var(--amber);background:var(--surface);border-radius:0 8px 8px 0}
+.note p{margin:4px 0}
+.try{margin-top:12px;padding:12px 14px;border-left:4px solid var(--live);background:var(--surface);border-radius:0 8px 8px 0}
+
+.qtext code,.qexp code,.note code,.try code,p code{font-family:var(--mono);font-size:.9em;color:var(--c1)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* Counters: momentary pushbuttons, one cap color per job */
+.pb .cap,.pb.held .cap{background:var(--cap,var(--red))}
+.pb .cap{box-shadow:0 4px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.held .cap{box-shadow:0 1px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.k-up{--cap:var(--live)} .pb.k-dn{--cap:var(--amber)} .pb.k-rs{--cap:var(--red)} .pb.k-ld{--cap:var(--c1)}
+.bar .acts{gap:10px}
+.bar .inds{gap:10px}
+@media (max-width:400px){ .pilot small{display:none} .bar .pb b{font-size:12px} }
+</style>
+</head>
+<body class="has-bar">
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Counters practice</span><span class="ver">v1.0</span></div>
+    <div class="plats" role="group" aria-label="PLC platform">
+      <button data-plat="slc">SLC 500</button>
+      <button data-plat="clx">CompactLogix</button>
+      <button data-plat="s7">Siemens S7</button>
+      <button data-plat="click">CLICK</button>
+      <button data-plat="dl06">DL06</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="lbl">Counter instruction</div>
+    <div class="seg" id="typeSeg" role="group" aria-label="Counter type"></div>
+    <h2 id="cTitle"></h2>
+    <p id="cDesc"></p>
+
+    <div class="ladder" id="ladder" aria-label="Live ladder logic"></div>
+
+    <div class="lbl" id="preLbl">Preset</div>
+    <div class="seg" id="preSeg" role="group" aria-label="Preset count">
+      <button data-pre="3">3</button><button data-pre="5" aria-pressed="true">5</button><button data-pre="10">10</button>
+    </div>
+
+    <table class="status" id="statusTbl"></table>
+
+    <div class="lbl">Timing diagram (last 20 seconds)</div>
+    <div class="chartbox"><canvas id="chart" aria-label="Timing diagram"></canvas></div>
+
+    <div class="try" id="tryBox"></div>
+    <div class="note" id="platNote"></div>
+  </section>
+</main>
+
+<div class="bar" id="ctlBar">
+  <div class="in">
+    <div class="inds">
+      <div class="pilot"><span class="plamp" id="pLamp" aria-hidden="true"></span><span><b>Lamp</b><small id="pLampA"></small></span></div>
+      <div class="bits" id="pBits" aria-label="Counter bits"></div>
+    </div>
+    <div class="acts" id="acts"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var store = {
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var PLATS=["slc","clx","s7","click","dl06"];
+var state = {
+  plat: store.get("rl-plat") || "slc",
+  type: "UP", pre: 5, acc: 0, ov:false, un:false,
+  inp:{up:false,dn:false,rs:false,ld:false}, prev:{up:false,dn:false,rs:false,ld:false},
+  hist:[], t:0, lastSample:-1
+};
+if(PLATS.indexOf(state.plat)<0) state.plat="slc";
+
+/* ---------- Platform data ----------
+   Behavior keys: UP = count up, DN = count down, UPDN = up and down.
+   style: ab = Allen-Bradley separate boxes + RES, s7 = IEC box with pins, ad = AutomationDirect box with inputs */
+var P = {
+  slc:{
+    name:"SLC 500", style:"ab",
+    types:["UP","UPDN"], labels:{UP:"CTU",UPDN:"CTU + CTD"},
+    tNames:{UP:"CTU: Count Up",UPDN:"CTU + CTD: Counting up and down"},
+    addr:{up:"I:1/0",dn:"I:1/1",rs:"I:1/2",out:"O:2/0"}, ctr:"C5:0",
+    bit:function(b){return "C5:0/"+b}, word:function(w){return "C5:0."+w},
+    min:-32768, max:32767,
+    note:"<p><b>SLC 500:</b> counters live in file <code>C5</code>. Each element (<code>C5:0</code>, <code>C5:1</code>…) holds three words: control bits, PRE and ACC. A CTU and a CTD with the same address work on the same count. That is how you build an up/down counter.</p><p><b>Bits:</b> CU and CD follow their rungs. DN is on when ACC ≥ PRE. OV sets if ACC counts past 32,767 and wraps to −32,768. UN sets if it counts down past −32,768.</p><p>Counters are retentive: the count stays when the rung goes false. Only RES (or moving 0 into ACC) clears it.</p>"
+  },
+  clx:{
+    name:"CompactLogix", style:"ab",
+    types:["UP","UPDN"], labels:{UP:"CTU",UPDN:"CTU + CTD"},
+    tNames:{UP:"CTU: Count Up",UPDN:"CTU + CTD: Counting up and down"},
+    addr:{up:"Count_Up_PB",dn:"Count_Dn_PB",rs:"Reset_PB",out:"Lamp"},
+    alias:{up:"Local:1:I.Data.0",dn:"Local:1:I.Data.1",rs:"Local:1:I.Data.2",out:"Local:2:O.Data.0"},
+    ctr:"Counter1",
+    bit:function(b){return "Counter1."+b}, word:function(w){return "Counter1."+w},
+    min:-2147483648, max:2147483647,
+    note:"<p><b>CompactLogix:</b> a counter is a tag of type <code>COUNTER</code>, with members <code>.CU .CD .DN .OV .UN .PRE .ACC</code>. Same instructions and bits as the SLC 500: CTU, CTD and RES.</p><p>PRE and ACC are DINTs (32-bit), so OV only sets after 2,147,483,647 counts.</p>"
+  },
+  s7:{
+    name:"Siemens S7", style:"s7",
+    types:["UP","DN","UPDN"], labels:{UP:"CTU",DN:"CTD",UPDN:"CTUD"},
+    tNames:{UP:"CTU: Count up",DN:"CTD: Count down",UPDN:"CTUD: Count up and down"},
+    addr:{up:"%I0.0",dn:"%I0.1",rs:"%I0.2",ld:"%I0.3",out:"%Q0.0"}, ctr:"“IEC_Counter_0_DB”",
+    min:-32768, max:32767,
+    note:"<p><b>S7-1200/1500 (TIA Portal):</b> the IEC counters CTU, CTD and CTUD each need their own instance data block. <code>PV</code> is the preset and <code>CV</code> the current value, INT by default.</p><p>CTU’s <code>Q</code> is on when CV ≥ PV, and <code>R</code> clears CV. CTD’s <code>Q</code> is on when CV ≤ 0, and <code>LD</code> loads PV into CV. CTUD has both outputs: <code>QU</code> (CV ≥ PV) and <code>QD</code> (CV ≤ 0). It also has an LD input, left unused here.</p><p><b>Older S7-300/400:</b> the S5 counters <code>S_CU</code>, <code>S_CD</code> and <code>S_CUD</code> use counters like <code>C1</code> and count from 0 to 999.</p>"
+  },
+  click:{
+    name:"CLICK", style:"ad",
+    types:["UP","UPDN"], labels:{UP:"Count Up",UPDN:"Up/Down"},
+    tNames:{UP:"Counter: Count Up",UPDN:"Counter: Count Up and Down"},
+    addr:{up:"X001",dn:"X002",rs:"X003",out:"Y001"}, ctr:"CT1", accA:"CTD1", preWord:"setpoint",
+    box:function(t){return ["Counter", t==="UPDN"?"Up and Down":"Count Up"]},
+    info:function(n){return [["Counter","CT1"],["Setpoint",String(n)]]},
+    preFmt:function(n){return String(n)},
+    min:-2147483648, max:function(){return 2147483647},
+    note:"<p><b>CLICK:</b> you set up the Counter instruction in a dialog: count up, count down or both, and a setpoint (a constant or a register). Every CLICK counter has a Reset input.</p><p><code>CT1</code> is the done bit, on when <code>CTD1</code> ≥ the setpoint. CTD1 is the 32-bit current count, and it keeps counting past the setpoint.</p>"
+  },
+  dl06:{
+    name:"DL06", style:"ad",
+    types:["UP","UPDN"], labels:{UP:"CNT",UPDN:"UDC"},
+    tNames:{UP:"CNT: Counter",UPDN:"UDC: Up/down counter"},
+    addr:{up:"X0",dn:"X1",rs:"X2",out:"Y0"}, ctr:"CT0", accA:"CTA0", preWord:"preset",
+    box:function(t){return t==="UPDN"?["UDC","Up/down counter"]:["CNT","Counter"]},
+    info:function(n){return [["Counter","CT0"],["Preset","K"+n]]},
+    preFmt:function(n){return "K"+n},
+    min:0, max:function(t){return t==="UPDN"?99999999:9999},
+    note:"<p><b>DL06 (DirectSOFT):</b> <code>CNT</code> has a count input and a reset input. <code>CT0</code> is the done bit, on when <code>CTA0</code> ≥ the preset. CTA0 is stored in V-memory word <code>V1000</code> and counts up to 9999, in BCD. Presets are constants like <code>K10</code>.</p><p><code>UDC</code> is the up/down counter, with up, down and reset inputs. It uses two counter numbers (CT0 and CT1) because its count is 8 BCD digits, up to 99999999. The DL06 has no down-only counter.</p><p><code>SGCNT</code>, the stage counter, counts up with no reset input. You clear it with an RST instruction.</p>"
+  }
+};
+var DESC = {
+  UP:"Adds one each time its input goes from off to on. Holding the input on does nothing more. The done bit turns on when the count reaches the preset, and the count keeps going past it.",
+  DN:"Takes away one each time its input goes from off to on. Load copies the preset into the count, so it can count down to zero.",
+  UPDN:"One input counts up, the other counts down, both working on the same count. The done bit simply compares the count to the preset, whichever way the count got there."
+};
+var TRY = {
+  UP:"<b>Try this:</b> press Up a few times. Each press adds exactly one, however long you hold it. Keep going past the preset: the count keeps climbing and the done bit stays on. Then press Reset.",
+  DN:"<b>Try this:</b> notice that Q is already on. CV is 0, and CTD’s Q means CV ≤ 0. Press Load to copy PV into CV, then count down with Down. Q comes back on when CV reaches 0.",
+  UPDN:"<b>Try this:</b> count up past the preset, then press Down. The done bit turns off as soon as the count drops below the preset."
+};
+var TRY_S7UD = "<b>Try this:</b> QU turns on at CV ≥ PV, and QD at CV ≤ 0. Notice QD is on at the start. Count up past PV, then back down below zero, and watch them trade places.";
+var LBL = {up:"Up",dn:"Down",rs:"Reset",ld:"Load"};
+
+/* Which inputs each instruction uses */
+function ins(){
+  var st=P[state.plat].style, t=state.type;
+  if(st==="s7") return t==="UP"?["up","rs"] : t==="DN"?["dn","ld"] : ["up","dn","rs"];
+  return t==="UP"?["up","rs"] : ["up","dn","rs"];
+}
+function maxOf(){var m=P[state.plat].max; return typeof m==="function"?m(state.type):m}
+
+/* ---------- Counter logic: one scan ---------- */
+function scan(){
+  var p=P[state.plat], used=ins(), I=state.inp, pv=state.prev;
+  function u(k){return used.indexOf(k)>=0 && I[k]}
+  var up=u("up"), dn=u("dn"), rs=u("rs"), ld=u("ld"), upE=up&&!pv.up, dnE=dn&&!pv.dn, mx=maxOf();
+  if(p.style==="ab"){
+    /* CTU and CTD run first; RES sits below them, so it wins while held */
+    if(upE){ if(state.acc>=mx){state.acc=p.min; state.ov=true} else state.acc++; }
+    if(dnE){ if(state.acc<=p.min){state.acc=mx; state.un=true} else state.acc--; }
+    if(rs){ state.acc=0; state.ov=false; state.un=false; }
+  } else {
+    if(rs) state.acc=0;
+    else if(ld) state.acc=state.pre;
+    else { if(upE && state.acc<mx) state.acc++; if(dnE && state.acc>p.min) state.acc--; }
+  }
+  pv.up=up; pv.dn=dn; pv.rs=rs; pv.ld=ld;
+}
+function sig(){
+  var p=P[state.plat], used=ins(), I=state.inp, a=state.acc, pre=state.pre, t=state.type;
+  function u(k){return used.indexOf(k)>=0 && I[k]}
+  var s={one:true, up:u("up"), dn:u("dn"), rs:u("rs"), ld:u("ld")};
+  if(p.style==="ab"){ s.cu=s.up&&!s.rs; s.cd=s.dn&&!s.rs; s.done=a>=pre; }
+  else if(p.style==="s7"){
+    if(t==="UPDN"){ s.qu=a>=pre; s.qd=a<=0; s.done=s.qu; }
+    else if(t==="DN"){ s.q=a<=0; s.done=s.q; }
+    else { s.q=a>=pre; s.done=s.q; }
+  } else { s.done=a>=pre; }
+  return s;
+}
+function resetCounter(){
+  state.acc=0; state.ov=false; state.un=false;
+  ["up","dn","rs","ld"].forEach(function(k){state.inp[k]=false; state.prev[k]=false});
+  state.hist=[]; state.t=0; state.lastSample=-1;
+}
+
+/* ---------- Ladder SVG ---------- */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+var L=10, R=350;
+function contact(x,y,s,addr,tag){
+  /* long addresses start at the rail instead of centering, so they don't run off the left edge */
+  var long=String(addr).length>10, ax=long?L+4:x+8, an=long?"start":"middle";
+  return '<text class="addr" x="'+ax+'" y="'+(y-18)+'" text-anchor="'+an+'">'+esc(addr)+'</text>'+
+    (tag?'<text class="tag" x="'+(x+8)+'" y="'+(y+27)+'" text-anchor="middle">'+esc(tag)+'</text>':'')+
+    '<rect class="cfill" data-sig="'+s+'" x="'+(x+2)+'" y="'+(y-10)+'" width="12" height="20" rx="1"/>'+
+    '<line class="cb" x1="'+x+'" y1="'+(y-12)+'" x2="'+x+'" y2="'+(y+12)+'"/>'+
+    '<line class="cb" x1="'+(x+16)+'" y1="'+(y-12)+'" x2="'+(x+16)+'" y2="'+(y+12)+'"/>';
+}
+function coil(x,y,s,addr,tag,inner){
+  return '<text class="addr" x="'+(x+14)+'" y="'+(y-18)+'" text-anchor="middle">'+esc(addr)+'</text>'+
+    (tag?'<text class="tag" x="'+(x+14)+'" y="'+(y+27)+'" text-anchor="middle">'+esc(tag)+'</text>':'')+
+    '<path class="coil" data-sig="'+s+'" d="M'+(x+6)+' '+(y-12)+' Q'+(x-3)+' '+y+' '+(x+6)+' '+(y+12)+' M'+(x+22)+' '+(y-12)+' Q'+(x+31)+' '+y+' '+(x+22)+' '+(y+12)+'"/>'+
+    (inner?'<text x="'+(x+14)+'" y="'+(y+4)+'" text-anchor="middle" style="font-size:9px;font-weight:700">'+inner+'</text>':'');
+}
+function wire(s,x1,y1,x2,y2){return '<line class="w" data-sig="'+s+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'}
+function ind(x,y,s,txt){return '<circle class="ind" data-sig="'+s+'" cx="'+x+'" cy="'+y+'" r="13"/><text class="indt" data-sig="'+s+'" x="'+x+'" y="'+(y+4)+'" text-anchor="middle">'+txt+'</text>'}
+function tagFor(k){var p=P[state.plat]; return p.alias ? p.alias[k] : {up:"Up button",dn:"Down button",rs:"Reset button",out:"Lamp"}[k]}
+
+function buildLadder(){
+  var p=P[state.plat], t=state.type, out="", y, H;
+  if(p.style==="ab"){
+    /* One box per instruction, then the done contact, then RES at the bottom */
+    var boxes = t==="UPDN" ? [["CTU","up","CU","Count Up"],["CTD","dn","CD","Count Down"]] : [["CTU","up","CU","Count Up"]];
+    var y0=10;
+    boxes.forEach(function(b){
+      var yl=y0+32;
+      out+=wire("one",L,yl,40,yl)+contact(40,yl,b[1],p.addr[b[1]],tagFor(b[1]))+wire(b[1],56,yl,128,yl);
+      out+='<rect class="box" x="128" y="'+(y0+8)+'" width="160" height="88" rx="3"/>'+
+        '<text class="big" x="138" y="'+(y0+27)+'">'+b[0]+'</text><text x="138" y="'+(y0+41)+'" class="tag">'+b[3]+'</text>'+
+        '<text x="138" y="'+(y0+58)+'">Counter</text><text class="val" x="280" y="'+(y0+58)+'" text-anchor="end">'+esc(p.ctr)+'</text>'+
+        '<text x="138" y="'+(y0+73)+'">Preset</text><text class="val" x="280" y="'+(y0+73)+'" text-anchor="end">'+state.pre+'</text>'+
+        '<text x="138" y="'+(y0+88)+'">Accum</text><text class="val accv" x="280" y="'+(y0+88)+'" text-anchor="end"></text>';
+      var bs=b[2].toLowerCase();
+      out+=wire(bs,288,yl,308,yl)+ind(322,yl,bs,b[2])+wire(bs,335,yl,R,yl);
+      out+=wire("done",288,yl+38,308,yl+38)+ind(322,yl+38,"done","DN")+wire("done",335,yl+38,R,yl+38);
+      y0+=108;
+    });
+    y=y0+30;
+    out+=wire("one",L,y,40,y)+contact(40,y,"done",p.bit("DN"),"Done")+wire("done",56,y,296,y)+coil(296,y,"done",p.addr.out,tagFor("out"))+wire("done",324,y,R,y);
+    y+=66;
+    out+=wire("one",L,y,40,y)+contact(40,y,"rs",p.addr.rs,tagFor("rs"))+wire("rs",56,y,296,y)+coil(296,y,"rs",p.ctr,"",'RES')+wire("rs",324,y,R,y);
+    H=y+34;
+  } else {
+    /* One box with an input pin per contact */
+    var PIN=44, used=ins(), s7=p.style==="s7", bx0=128, bx1=s7?268:300, top=22, py=72;
+    var pinName = s7 ? {up:"CU",dn:"CD",rs:"R",ld:"LD"} : (t==="UP"?{up:"Count",rs:"Reset"}:{up:"Up",dn:"Down",rs:"Reset"});
+    var bottom;
+    if(s7){
+      var cvY=py+PIN*used.length;
+      bottom=cvY+14;
+      out+='<text class="addr" x="'+((bx0+bx1)/2)+'" y="16" text-anchor="middle">'+esc(p.ctr)+'</text>'+
+        '<rect class="box" x="'+bx0+'" y="'+top+'" width="'+(bx1-bx0)+'" height="'+(bottom-top)+'" rx="3"/>'+
+        '<text class="big" x="'+((bx0+bx1)/2)+'" y="40" text-anchor="middle">'+p.labels[t]+'</text><text class="tag" x="'+((bx0+bx1)/2)+'" y="54" text-anchor="middle">Int</text>'+
+        '<text x="'+(bx0+6)+'" y="'+(cvY+4)+'" class="tag">PV</text><text class="val" x="'+(bx0-6)+'" y="'+(cvY+8)+'" text-anchor="end">'+state.pre+'</text>'+wire("none",bx0-4,cvY,bx0,cvY)+
+        '<text x="'+(bx1-6)+'" y="'+(cvY+4)+'" class="tag" text-anchor="end">CV</text><text class="val accv" x="'+(bx1+8)+'" y="'+(cvY+4)+'"></text>';
+      var outs = t==="UPDN" ? [["QU","qu"],["QD","qd"]] : [["Q","q"]];
+      outs.forEach(function(o,i){
+        var oy=py+PIN*i;
+        out+='<text x="'+(bx1-6)+'" y="'+(oy+4)+'" class="tag" text-anchor="end">'+o[0]+'</text>'+
+          wire(o[1],bx1,oy,308,oy)+ind(322,oy,o[1],o[0])+wire(o[1],335,oy,R,oy);
+      });
+    } else {
+      var info=p.info(state.pre), bxT=p.box(t), iy=py;
+      info.forEach(function(r){ out+='<text x="206" y="'+iy+'">'+r[0]+'</text><text class="val" x="'+(bx1-8)+'" y="'+iy+'" text-anchor="end">'+esc(r[1])+'</text>'; iy+=18; });
+      out+='<text x="206" y="'+iy+'">'+p.accA+'</text><text class="val accv" x="'+(bx1-8)+'" y="'+iy+'" text-anchor="end"></text>';
+      bottom=Math.max(py+PIN*(used.length-1), iy)+18;
+      out='<rect class="box" x="'+bx0+'" y="'+top+'" width="'+(bx1-bx0)+'" height="'+(bottom-top)+'" rx="3"/>'+
+        '<text class="big" x="'+(bx0+10)+'" y="42">'+bxT[0]+'</text><text x="'+(bx0+10)+'" y="56" class="tag">'+bxT[1]+'</text>'+out;
+    }
+    used.forEach(function(k,i){
+      var yy=py+PIN*i;
+      out+=wire("one",L,yy,40,yy)+contact(40,yy,k,p.addr[k],"")+wire(k,56,yy,bx0,yy)+
+        '<text x="'+(bx0+6)+'" y="'+(yy+4)+'" class="tag">'+pinName[k]+'</text>';
+    });
+    y=bottom+48;
+    var dnA = s7 ? p.ctr+"."+(t==="UPDN"?"QU":"Q") : p.ctr;
+    out+=wire("one",L,y,40,y)+contact(40,y,"done",dnA,"Done")+wire("done",56,y,296,y)+coil(296,y,"done",p.addr.out,"Lamp")+wire("done",324,y,R,y);
+    H=y+34;
+  }
+  out='<line class="rail" x1="'+L+'" y1="8" x2="'+L+'" y2="'+(H-8)+'"/><line class="rail" x1="'+R+'" y1="8" x2="'+R+'" y2="'+(H-8)+'"/>'+out;
+  document.getElementById("ladder").innerHTML='<svg viewBox="0 0 360 '+H+'" role="img" aria-label="Ladder logic for '+esc(p.labels[t])+'">'+out+'</svg>';
+  sigEls=[].slice.call(document.querySelectorAll("#ladder [data-sig]"));
+  accEls=[].slice.call(document.querySelectorAll("#ladder .accv"));
+}
+var sigEls=[], accEls=[];
+
+/* ---------- Status table ---------- */
+function buildStatus(){
+  var p=P[state.plat], t=state.type, rows;
+  if(p.style==="ab"){
+    rows=[["CU",p.bit("CU"),"Count up enable: follows the CTU rung"]];
+    if(t==="UPDN") rows.push(["CD",p.bit("CD"),"Count down enable: follows the CTD rung"]);
+    rows=rows.concat([
+      ["DN",p.bit("DN"),"Done: on when ACC ≥ PRE"],
+      ["OV",p.bit("OV"),"Overflow: counted up past the maximum"],
+      ["UN",p.bit("UN"),"Underflow: counted down past the minimum"],
+      ["PRE",p.word("PRE"),"Preset count"],
+      ["ACC",p.word("ACC"),"Accumulated count"]
+    ]);
+  } else if(p.style==="s7"){
+    var pin={up:"CU",dn:"CD",rs:"R",ld:"LD"}, what={up:"Count up input",dn:"Count down input",rs:"Reset: CV = 0",ld:"Load: CV = PV"};
+    rows=ins().map(function(k){return [k,p.addr[k]+" → "+pin[k],what[k]]});
+    if(t==="UPDN"){ rows.push(["qu",p.ctr+".QU","On when CV ≥ PV"]); rows.push(["qd",p.ctr+".QD","On when CV ≤ 0"]); }
+    else rows.push(["q",p.ctr+".Q",t==="DN"?"On when CV ≤ 0":"On when CV ≥ PV"]);
+    rows.push(["PRE",p.ctr+".PV","Preset value"]);
+    rows.push(["ACC",p.ctr+".CV","Current value"]);
+  } else {
+    rows=[
+      ["done",p.ctr,"Done bit: on when "+p.accA+" ≥ the "+p.preWord],
+      ["ACC",p.accA+(state.plat==="dl06"?" (V1000)":""),"Current count. Keeps counting past the "+p.preWord],
+      ["PRE",p.preWord.charAt(0).toUpperCase()+p.preWord.slice(1),"Count to reach"]
+    ];
+  }
+  document.getElementById("statusTbl").innerHTML = rows.map(function(r){
+    return '<tr><td>'+esc(r[1])+'</td><td class="v" id="sv'+r[0]+'"></td><td class="m">'+r[2]+'</td></tr>';
+  }).join("");
+}
+function bitHtml(v){return '<span class="bit'+(v?' on':'')+'">'+(v?1:0)+'</span>'}
+function setHtml(id,h){var e=document.getElementById(id); if(e && e.innerHTML!==h) e.innerHTML=h}
+function fmtAcc(){var p=P[state.plat]; return String(state.acc)}
+
+/* ---------- Render ---------- */
+function render(){
+  var s=sig(), p=P[state.plat];
+  sigEls.forEach(function(e){ e.classList.toggle("on", !!s[e.getAttribute("data-sig")]) });
+  var a=fmtAcc(); accEls.forEach(function(e){ if(e.textContent!==a) e.textContent=a });
+  document.getElementById("pLamp").classList.toggle("on",!!s.done);
+  [].forEach.call(document.querySelectorAll("#pBits i"),function(e){ e.classList.toggle("on",!!s[e.getAttribute("data-sig")]) });
+  ["cu","cd","done","q","qu","qd","up","dn","rs","ld"].forEach(function(k){ setHtml("sv"+k,bitHtml(s[k])) });
+  setHtml("svDN",bitHtml(s.done)); setHtml("svCU",bitHtml(s.cu)); setHtml("svCD",bitHtml(s.cd));
+  setHtml("svOV",bitHtml(state.ov)); setHtml("svUN",bitHtml(state.un));
+  setHtml("svPRE",esc(p.preFmt?p.preFmt(state.pre):String(state.pre))); setHtml("svACC",a);
+  drawChart();
+}
+
+var last=null;
+function loop(ts){
+  if(last===null) last=ts;
+  var dt=Math.min(ts-last,100); last=ts;
+  scan(); state.t+=dt;
+  if(state.t-state.lastSample>=40){
+    var s=sig();
+    state.hist.push({t:state.t,up:s.up,dn:s.dn,rs:s.rs,ld:s.ld,done:s.done,qd:s.qd,acc:state.acc});
+    state.lastSample=state.t;
+    while(state.hist.length && state.hist[0].t < state.t-21000) state.hist.shift();
+  }
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- Timing chart ---------- */
+var cv=document.getElementById("chart"), ctx=cv.getContext("2d");
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function drawChart(){
+  if(!ctx) return;
+  var dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  if(!w) return;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  var p=P[state.plat], t=state.type, s7=p.style==="s7";
+  var names = s7 ? {up:"CU",dn:"CD",rs:"R",ld:"LD"} : LBL;
+  var tr = ins().map(function(k){return [names[k],k]});
+  if(s7 && t==="UPDN"){ tr.push(["QU","done"]); tr.push(["QD","qd"]); }
+  else tr.push([s7?"Q":p.style==="ab"?"DN":p.ctr,"done"]);
+  tr.push([s7?"CV":p.style==="ab"?"ACC":p.accA,"acc"]);
+  var rowH=h/(tr.length+1), left=46, win=20000, t1=state.t, t0=t1-win;
+  var mut=cssVar("--muted"), live=cssVar("--live"), amber=cssVar("--amber"), red=cssVar("--red"), line=cssVar("--line"), c1=cssVar("--c1");
+  ctx.font='600 12px '+cssVar("--sans"); ctx.textBaseline="middle";
+  function X(tt){return left+(tt-t0)/win*(w-left-4)}
+  ctx.strokeStyle=line; ctx.lineWidth=1;
+  for(var sx=Math.ceil(t0/1000)*1000;sx<=t1;sx+=1000){var gx=X(sx); if(gx<left) continue; ctx.globalAlpha=(sx%5000===0)?.9:.35; ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,h); ctx.stroke()}
+  ctx.globalAlpha=1;
+  /* count scale: always shows 0 and the preset, stretches to fit the count */
+  var lo=0, hi=state.pre+2;
+  state.hist.forEach(function(e){ if(e.acc<lo) lo=e.acc; if(e.acc>hi) hi=e.acc; });
+  tr.forEach(function(r,i){
+    var key=r[1], isAcc=key==="acc";
+    var top=i*rowH+6, bot=(isAcc?h:(i+1)*rowH)-6;
+    ctx.fillStyle=mut; ctx.fillText(r[0],4,(top+bot)/2);
+    function Y(e){ return isAcc ? bot-(e.acc-lo)/(hi-lo)*(bot-top) : bot-(e[key]?1:0)*(bot-top) }
+    if(isAcc){
+      [[state.pre,"preset"],[0,"0"]].forEach(function(m){
+        if(m[0]===0 && lo===0) return;
+        var yy=bot-(m[0]-lo)/(hi-lo)*(bot-top);
+        ctx.setLineDash([4,4]); ctx.strokeStyle=mut; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(left,yy); ctx.lineTo(w,yy); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle=mut; ctx.font='500 10px '+cssVar("--sans"); ctx.fillText(m[1],left+2,yy-7); ctx.font='600 12px '+cssVar("--sans");
+      });
+    }
+    var col = isAcc?amber : key==="rs"?red : key==="dn"?amber : key==="ld"?c1 : live;
+    ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.beginPath();
+    var started=false, prevY=null;
+    state.hist.forEach(function(e){
+      var x=X(e.t); if(x<left) return;
+      var yy=Y(e);
+      if(!started){ctx.moveTo(x,yy); started=true}
+      else if(prevY!==yy){ctx.lineTo(x,prevY); ctx.lineTo(x,yy)}
+      else ctx.lineTo(x,yy);
+      prevY=yy;
+    });
+    ctx.stroke();
+  });
+}
+
+/* ---------- Setup ---------- */
+function buildCounters(){
+  var p=P[state.plat];
+  if(p.types.indexOf(state.type)<0) state.type="UP";
+  document.getElementById("typeSeg").innerHTML=p.types.map(function(t){return '<button data-type="'+t+'" aria-pressed="'+(t===state.type)+'">'+p.labels[t]+'</button>'}).join("");
+  document.getElementById("cTitle").textContent=p.tNames[state.type];
+  document.getElementById("cDesc").textContent=DESC[state.type];
+  document.getElementById("tryBox").innerHTML = (p.style==="s7" && state.type==="UPDN") ? TRY_S7UD : TRY[state.type];
+  document.getElementById("platNote").innerHTML=p.note;
+  document.getElementById("preLbl").textContent = p.preWord ? p.preWord.charAt(0).toUpperCase()+p.preWord.slice(1) : "Preset";
+  document.getElementById("pLampA").textContent=p.addr.out;
+  var bits = p.style==="ab" ? (state.type==="UPDN"?[["CU","cu"],["CD","cd"],["DN","done"]]:[["CU","cu"],["DN","done"]])
+           : p.style==="s7" ? (state.type==="UPDN"?[["QU","done"],["QD","qd"]]:[["Q","done"]])
+           : [[p.ctr,"done"]];
+  document.getElementById("pBits").innerHTML=bits.map(function(b){return '<span class="bl"><i data-sig="'+b[1]+'"></i>'+esc(b[0])+'</span>'}).join("");
+  document.getElementById("acts").innerHTML=ins().map(function(k){
+    return '<button class="pb k-'+k+'" data-k="'+k+'"><span class="cap" aria-hidden="true"></span><span><b>'+LBL[k]+'</b><small>'+esc(p.addr[k])+'</small></span></button>';
+  }).join("");
+  resetCounter(); buildLadder(); buildStatus(); render();
+}
+document.getElementById("typeSeg").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return; state.type=b.dataset.type; buildCounters();
+});
+document.getElementById("preSeg").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return;
+  state.pre=+b.dataset.pre;
+  this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",String(x===b))});
+  resetCounter(); buildLadder(); buildStatus(); render();
+});
+
+/* Momentary pushbuttons: on while held */
+var acts=document.getElementById("acts");
+function press(b,v){ if(!b) return; state.inp[b.dataset.k]=v; b.classList.toggle("held",v); }
+acts.addEventListener("pointerdown",function(e){var b=e.target.closest(".pb"); if(!b) return; e.preventDefault(); try{b.setPointerCapture(e.pointerId)}catch(_){} press(b,true)});
+["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){acts.addEventListener(ev,function(e){press(e.target.closest(".pb"),false)})});
+acts.addEventListener("keydown",function(e){if(e.key===" "||e.key==="Enter"){var b=e.target.closest(".pb"); if(b){e.preventDefault(); if(!e.repeat) press(b,true)}}});
+acts.addEventListener("keyup",function(e){if(e.key===" "||e.key==="Enter")press(e.target.closest(".pb"),false)});
+acts.addEventListener("contextmenu",function(e){e.preventDefault()});
+
+/* ---------- Platform switching ---------- */
+function setPlat(p,init){
+  state.plat=p; if(!init) store.set("rl-plat",p);
+  document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plat===p))});
+  buildCounters();
+}
+document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(b) setPlat(b.dataset.plat)});
+setPlat(state.plat,true);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
