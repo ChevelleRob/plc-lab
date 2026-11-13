@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab: PLC addressing practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --wire:#8A939A; --live:#178F4C; --liveglow:rgba(23,143,76,.22);
+  --amber:#B97C00; --red:#C13D2B; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5; --c2:#9A6400; --c2bg:#F6E7C8; --c3:#177A45; --c3bg:#D6EEDF; --c4:#7A3C99; --c4bg:#EBDDF2;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+    --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+  --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+/* Header: a nameplate, like an engraved panel tag */
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand h1 a{color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:5px;padding:4px 0}
+.brand h1 a::before{content:"\2039";opacity:.6;font-weight:600}
+.brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+.plats{display:flex;gap:6px;margin-top:10px;overflow-x:auto}
+.plats button{flex:1 0 auto;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 10px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap}
+.plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+h3{font-size:17px;margin:20px 0 6px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.seg{display:flex;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-weight:600;cursor:pointer;border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+
+/* Addressing */
+.anat{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
+.picker{display:flex;gap:6px;flex-wrap:wrap}
+.picker button{font-family:var(--mono);font-size:14px;border:1.5px solid var(--line);background:var(--surface2);border-radius:6px;padding:5px 8px;cursor:pointer}
+.picker button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.parts{display:flex;flex-wrap:wrap;gap:3px;margin:16px 0 6px;font-family:var(--mono);font-size:clamp(24px,7vw,36px);font-weight:700}
+.parts button{border:0;border-radius:6px;padding:2px 5px;cursor:pointer;border-bottom:3px solid transparent}
+.parts button[aria-pressed="true"]{border-bottom-color:currentColor}
+.k1{color:var(--c1);background:var(--c1bg)} .k2{color:var(--c2);background:var(--c2bg)} .k3{color:var(--c3);background:var(--c3bg)} .k4{color:var(--c4);background:var(--c4bg)} .k0{color:var(--muted);background:transparent}
+.partdesc{min-height:3.2em;font-size:16px}
+.partdesc b{font-family:var(--mono)}
+.summary{margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
+.ref{width:100%;border-collapse:collapse;font-size:15px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.ref td,.ref th{padding:6px 10px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+.ref th{font-weight:600;background:var(--surface2);border-top:0}
+.ref td:first-child{font-family:var(--mono);color:var(--c1);white-space:nowrap}
+.scroll{overflow-x:auto}
+
+.quiz{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
+.qhead{display:flex;justify-content:space-between;color:var(--muted);font-size:14px}
+.qtext{font-size:18px;font-weight:600;margin:8px 0 12px}
+.qtext code,.qexp code,.note code,.try code,p code{font-family:var(--mono);font-size:.9em;color:var(--c1)}
+.opts{display:grid;gap:8px}
+.opts button{text-align:left;border:1.5px solid var(--line);background:var(--surface2);border-radius:8px;padding:11px 12px;cursor:pointer;font-family:var(--mono);font-size:15px}
+.opts button.plain{font-family:var(--sans);font-size:16px}
+.opts button.right{border-color:var(--live);background:var(--liveglow)}
+.opts button.wrong{border-color:var(--red);opacity:.85}
+.opts button:disabled{cursor:default;color:var(--ink)}
+.qexp{margin-top:12px;font-size:16px}
+.next{margin-top:12px;background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.0</span></div>
+    <div class="plats" role="group" aria-label="PLC platform">
+      <button data-plat="slc">SLC 500</button>
+      <button data-plat="clx">CompactLogix</button>
+      <button data-plat="s7">Siemens S7</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-addressing">
+    <h2 id="aTitle"></h2>
+    <p id="aIntro" class="muted"></p>
+    <div class="anat">
+      <div class="picker" id="addrPicker" role="group" aria-label="Example addresses"></div>
+      <div class="parts" id="parts"></div>
+      <div class="partdesc" id="partDesc"></div>
+      <div class="summary" id="addrSummary"></div>
+    </div>
+
+    <h3>Quick reference</h3>
+    <div class="scroll" id="refBox"></div>
+
+    <h3>Check yourself</h3>
+    <div class="quiz" id="quiz"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+var store = {
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var state = {
+  plat: store.get("rl-plat") || "slc"
+};
+if(["slc","clx","s7"].indexOf(state.plat)<0) state.plat="slc";
+
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+
+/* ---------- Addressing data ---------- */
+var A = {
+  slc:{
+    title:"SLC 500 addressing",
+    intro:"Addresses point to a file, then an element or slot, then a word or bit. Bits inside a word run 0 to 15, in decimal.",
+    ex:[
+      {parts:[["I",1,"<b>I</b> = input image file (file 1)."],[":1",2,"<b>:1</b> = the card in slot 1. Slot 0 is the processor."],["/0",3,"<b>/0</b> = bit 0, which is terminal 0 on that input card."]],sum:"Input card in slot 1, terminal 0. The full form is <code>I:1.0/0</code>, where <code>.0</code> is word 0 of the card."},
+      {parts:[["O",1,"<b>O</b> = output image file (file 0)."],[":2",2,"<b>:2</b> = the card in slot 2."],["/7",3,"<b>/7</b> = bit 7, terminal 7 on that output card."]],sum:"Output card in slot 2, terminal 7."},
+      {parts:[["B3",1,"<b>B3</b> = binary (bit) file number 3, the default bit file."],[":2",2,"<b>:2</b> = word 2 in that file."],["/5",3,"<b>/5</b> = bit 5 in that word."]],sum:"Internal bit. The same bit can be written <code>B3/37</code>, because word 2 starts at bit 32 (2 \u00D7 16) and 32 + 5 = 37."},
+      {parts:[["T4",1,"<b>T4</b> = timer file 4, the default timer file."],[":0",2,"<b>:0</b> = timer element 0, the first timer."],["/DN",3,"<b>/DN</b> = the done bit. Use a slash for bits: <code>/EN</code>, <code>/TT</code>, <code>/DN</code>."]],sum:"Done bit of the first timer. Its words use a dot instead: <code>T4:0.PRE</code> and <code>T4:0.ACC</code>."},
+      {parts:[["N7",1,"<b>N7</b> = integer file 7, the default integer file."],[":10",2,"<b>:10</b> = element (word) 10."]],sum:"A 16-bit integer, range \u221232,768 to 32,767. Add a bit to reach inside it: <code>N7:10/3</code>."}
+    ],
+    ref:'<table class="ref"><tr><th>File</th><th>Holds</th></tr><tr><td>O0</td><td>Outputs</td></tr><tr><td>I1</td><td>Inputs</td></tr><tr><td>S2</td><td>Processor status</td></tr><tr><td>B3</td><td>Bits</td></tr><tr><td>T4</td><td>Timers</td></tr><tr><td>C5</td><td>Counters</td></tr><tr><td>R6</td><td>Control (sequencers, shifts)</td></tr><tr><td>N7</td><td>Integers</td></tr><tr><td>F8</td><td>Floating point (SLC 5/03 and up)</td></tr></table>'
+  },
+  clx:{
+    title:"CompactLogix addressing",
+    intro:"Logix controllers use tag names instead of file numbers. Physical I/O still has a path, and you usually give it a readable alias.",
+    ex:[
+      {parts:[["Local",1,"<b>Local</b> = I/O in the controller\u2019s own chassis or rack. Remote I/O uses the module\u2019s name instead."],[":1",2,"<b>:1</b> = slot 1."],[":I",3,"<b>:I</b> = input data. <code>:O</code> is output data, <code>:C</code> is configuration."],[".Data",4,"<b>.Data</b> = the data member of that module."],[".0",3,"<b>.0</b> = bit 0, the first point."]],sum:"Slot 1 input, point 0, on a 1769 Compact I/O module. Newer 5380 controllers with 5069 I/O write this as <code>Local:1:I.Pt00.Data</code>."},
+      {parts:[["Local",1,"<b>Local</b> = local chassis."],[":2",2,"<b>:2</b> = slot 2."],[":O",3,"<b>:O</b> = output data."],[".Data",4,"<b>.Data</b> = the data member."],[".5",3,"<b>.5</b> = bit 5."]],sum:"Slot 2 output, point 5."},
+      {parts:[["Timer1",1,"<b>Timer1</b> = a tag you created with data type TIMER."],[".DN",4,"<b>.DN</b> = the done member. Every member uses a dot: <code>.EN</code>, <code>.TT</code>, <code>.PRE</code>, <code>.ACC</code>."]],sum:"Done bit of Timer1. The tag name is whatever you chose. There is no T4 file."},
+      {parts:[["Motor",1,"<b>Motor</b> = an array tag."],["[3]",2,"<b>[3]</b> = element 3. Arrays start at 0."],[".Run",4,"<b>.Run</b> = a member, if Motor is a user-defined type (UDT)."]],sum:"The Run member of the fourth motor in an array of UDTs."},
+      {parts:[["Count",1,"<b>Count</b> = a DINT tag (32-bit integer)."],[".7",3,"<b>.7</b> = bit 7 inside it. DINT bits run 0 to 31."]],sum:"Any integer tag can be read bit by bit with a dot and the bit number."}
+    ],
+    ref:'<table class="ref"><tr><th>Thing</th><th>Notes</th></tr><tr><td>BOOL</td><td>One bit</td></tr><tr><td>DINT</td><td>32-bit integer, bits .0 to .31</td></tr><tr><td>REAL</td><td>Floating point</td></tr><tr><td>TIMER</td><td>.EN .TT .DN .PRE .ACC (ms)</td></tr><tr><td>COUNTER</td><td>.CU .CD .DN .OV .UN .PRE .ACC</td></tr><tr><td>Alias</td><td>A readable name that points to another tag or I/O point</td></tr><tr><td>Scope</td><td>Controller tags work everywhere; program tags only in their program</td></tr></table>'
+  },
+  s7:{
+    title:"Siemens S7 addressing",
+    intro:"S7 addresses are an area letter, a byte number, and a bit number. Bits in a byte only go 0 to 7. TIA Portal shows absolute addresses with a % sign.",
+    ex:[
+      {parts:[["%",0,"<b>%</b> = marks an absolute address in TIA Portal. Step 7 Classic leaves it off."],["I",1,"<b>I</b> = input area. German mnemonics use <b>E</b> (Eingang)."],["0",2,"<b>0</b> = byte 0."],[".0",3,"<b>.0</b> = bit 0 of that byte."]],sum:"First input bit. After <code>%I0.7</code> comes <code>%I1.0</code>. There is no <code>%I0.8</code>."},
+      {parts:[["%",0,"<b>%</b> = absolute address."],["Q",1,"<b>Q</b> = output area. German mnemonics use <b>A</b> (Ausgang)."],["1",2,"<b>1</b> = byte 1."],[".3",3,"<b>.3</b> = bit 3."]],sum:"Output byte 1, bit 3. It is the 12th output bit counting from <code>%Q0.0</code>."},
+      {parts:[["%",0,"<b>%</b> = absolute address."],["M",1,"<b>M</b> = bit memory (internal flags)."],["W",4,"<b>W</b> = word, 16 bits. <b>B</b> = byte, <b>D</b> = double word (32 bits). No letter means a single bit."],["10",2,"<b>10</b> = the starting byte."]],sum:"Memory word made of bytes MB10 and MB11. Watch overlap: <code>%MW10</code> and <code>%MW11</code> share MB11, so use even steps like MW10, MW12."},
+      {parts:[["%",0,"<b>%</b> = absolute address."],["I",1,"<b>I</b> = input area."],["W",4,"<b>W</b> = word (16 bits)."],["64",2,"<b>64</b> = starting byte. S7-1200 analog inputs default to start at byte 64."]],sum:"An analog input value, usually 0 to 27,648 for the full signal range."},
+      {parts:[["%DB1",1,"<b>%DB1</b> = data block number 1."],[".DBX",4,"<b>.DBX</b> = a bit inside the DB. <b>DBB</b>, <b>DBW</b>, <b>DBD</b> are byte, word and double word."],["0",2,"<b>0</b> = byte 0 of the block."],[".0",3,"<b>.0</b> = bit 0."]],sum:"Absolute DB addressing only works when the block is not \u201Coptimized.\u201D Optimized blocks are reached by name, like <code>\u201CMotor_DB\u201D.Running</code>."}
+    ],
+    ref:'<table class="ref"><tr><th>Area</th><th>Holds</th></tr><tr><td>I (E)</td><td>Inputs</td></tr><tr><td>Q (A)</td><td>Outputs</td></tr><tr><td>M</td><td>Bit memory</td></tr><tr><td>DB</td><td>Data blocks</td></tr><tr><td>T, C</td><td>S5 timers and counters (S7-300/400)</td></tr><tr><td>x.y</td><td>Byte x, bit y (0 to 7)</td></tr><tr><td>B / W / D</td><td>8 / 16 / 32 bits</td></tr></table>'
+  }
+};
+
+/* ---------- Quiz data ---------- */
+var Q = {
+  slc:[
+    {q:"Which address is input slot 3, terminal 4?",o:["I:3/4","O:3/4","I:4/3","B3:3/4"],a:0,e:"<code>I</code> for input, <code>:3</code> for slot, <code>/4</code> for terminal."},
+    {q:"What is <code>T4:5/DN</code>?",o:["Done bit of timer 5 in file 4","Timer 4 with a 5 s preset","Bit 5 of timer 4","Timer 5\u2019s preset"],a:0,p:1,e:"File T4, element 5, done bit. Bits use a slash."},
+    {q:"Which address is output slot 4, terminal 12?",o:["O:4/12","I:4/12","O:12/4","B3:4/12"],a:0,e:"<code>O</code> for output, <code>:4</code> for slot, <code>/12</code> for terminal."},
+    {q:"The address <code>I:2/7</code> is found on:",o:["Input slot 2, terminal 7","Input slot 7, terminal 2","Output slot 2, terminal 7","Input slot 2, word 7"],a:0,p:1,e:"The number after the colon is the slot. The number after the slash is the terminal."},
+    {q:"The address <code>O:5/3</code> is found on:",o:["Output slot 5, terminal 3","Output slot 3, terminal 5","Input slot 5, terminal 3","Output slot 5, word 3"],a:0,p:1,e:"<code>O</code> means output, <code>:5</code> is the slot, <code>/3</code> is the terminal."},
+    {q:"Time base 0.01 s. What preset gives a 2.5 second delay?",o:["250","25","2.5","2500"],a:0,e:"2.5 \u00F7 0.01 = 250 time-base units."},
+    {q:"Which file holds integers by default?",o:["N7","B3","F8","S2"],a:0,e:"N7 is the default integer file. F8 is floating point."},
+    {q:"In an SLC 500 rack, slot 0 holds:",o:["The processor","The first input card","The power supply","The first output card"],a:0,p:1,e:"The processor sits in slot 0, so I/O cards start at slot 1."},
+    {q:"An RTO\u2019s rung goes false after 3 of 5 seconds. What happens to ACC?",o:["It holds at 3 seconds","It resets to 0","It keeps counting","It jumps to the preset"],a:0,p:1,e:"That is what makes it retentive. Only a RES clears it."}
+  ],
+  clx:[
+    {q:"<code>Timer1.ACC</code> is measured in:",o:["Milliseconds","Seconds","Hundredths of a second","Whatever time base you set"],a:0,p:1,e:"Logix timers always count in milliseconds. There is no time base."},
+    {q:"What preset gives a 3 second TON?",o:["3000","3","300","30"],a:0,e:"3 s \u00D7 1000 = 3000 ms."},
+    {q:"<code>Local:2:O.Data.5</code> is:",o:["Output module in slot 2, point 5","Input module in slot 2, point 5","Output module in slot 5, point 2","A timer\u2019s output bit"],a:0,p:1,e:"Local chassis, slot 2, output data, bit 5."},
+    {q:"Which bit is on only while a TON is counting?",o:[".TT",".EN",".DN",".ACC"],a:0,e:"TT is timer timing. EN follows the rung, DN means done."},
+    {q:"What is an alias tag?",o:["A readable name that points to another tag or I/O point","A copy of a tag\u2019s value","A tag that only works in one routine","A backup of the I/O configuration"],a:0,p:1,e:"Aliases let you write <code>Start_PB</code> instead of <code>Local:1:I.Data.0</code>."},
+    {q:"Where can a controller-scoped tag be used?",o:["In every program","Only in MainProgram","Only in the task that created it","Only in fault routines"],a:0,p:1,e:"Controller scope is global. Program-scoped tags stay inside their own program."},
+    {q:"A TOF\u2019s rung goes false. What does .DN do?",o:["Stays on until ACC reaches PRE","Turns off immediately","Turns on after the preset","Toggles each scan"],a:0,p:1,e:"That is the off delay: DN holds on while the timer counts down the delay."}
+  ],
+  s7:[
+    {q:"What input bit comes right after <code>%I0.7</code>?",o:["%I1.0","%I0.8","%I0.10","%I1.8"],a:0,e:"A byte has bits 0 to 7, so the next bit is byte 1, bit 0."},
+    {q:"Which bytes make up <code>%MW20</code>?",o:["MB20 and MB21","MB20 only","MB20 to MB23","MB19 and MB20"],a:0,e:"A word is two bytes starting at the number given."},
+    {q:"How many bits are in <code>%MD4</code>?",o:["32","16","8","4"],a:0,e:"D is a double word: 4 bytes, 32 bits."},
+    {q:"<code>%Q2.1</code> is:",o:["Output byte 2, bit 1","Output 21","Input byte 2, bit 1","Memory byte 2, bit 1"],a:0,p:1,e:"Q is the output area, then byte.bit."},
+    {q:"In German mnemonics, <code>%E0.0</code> is the same as:",o:["%I0.0","%Q0.0","%M0.0","%DB0.0"],a:0,e:"E is Eingang (input). A is Ausgang (output)."},
+    {q:"An IEC TON\u2019s output Q turns on when:",o:["ET reaches PT while IN stays on","IN turns on","IN turns off","R is pulsed"],a:0,p:1,e:"Q waits for the elapsed time to reach the preset time."},
+    {q:"Why is <code>%MW10</code> with <code>%MW11</code> a problem?",o:["They share byte MB11","MW11 is not a valid address","Words must start at multiples of 4","Nothing, they are separate"],a:0,p:1,e:"MW10 is MB10 and MB11. MW11 is MB11 and MB12. Writing one corrupts the other."}
+  ]
+};
+
+var aIdx=0, partIdx=-1;
+function buildAddressing(){
+  var a=A[state.plat];
+  document.getElementById("aTitle").textContent=a.title;
+  document.getElementById("aIntro").textContent=a.intro;
+  document.getElementById("refBox").innerHTML=a.ref;
+  if(aIdx>=a.ex.length) aIdx=0;
+  document.getElementById("addrPicker").innerHTML=a.ex.map(function(x,i){
+    return '<button data-i="'+i+'" aria-pressed="'+(i===aIdx)+'">'+esc(x.parts.map(function(p){return p[0]}).join(""))+'</button>';
+  }).join("");
+  partIdx=-1; renderAddr(); startQuiz();
+}
+function renderAddr(){
+  var ex=A[state.plat].ex[aIdx];
+  document.getElementById("parts").innerHTML=ex.parts.map(function(p,i){
+    return '<button class="k'+p[1]+'" data-p="'+i+'" aria-pressed="'+(i===partIdx)+'">'+esc(p[0])+'</button>';
+  }).join("");
+  document.getElementById("partDesc").innerHTML = partIdx<0 ? '<span class="muted">Tap each colored piece to see what it means.</span>' : ex.parts[partIdx][2];
+  document.getElementById("addrSummary").innerHTML=ex.sum;
+}
+document.getElementById("addrPicker").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; aIdx=+b.dataset.i; partIdx=-1; this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",String(x===b))}); renderAddr()});
+document.getElementById("parts").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; partIdx=+b.dataset.p; renderAddr()});
+
+/* ---------- Quiz ---------- */
+var quiz={list:[],i:0,score:0,answered:false};
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function startQuiz(){quiz.list=shuffle(Q[state.plat]).map(function(q){var order=shuffle(q.o.map(function(_,i){return i}));return {q:q,order:order}}); quiz.i=0; quiz.score=0; quiz.answered=false; renderQuiz()}
+function renderQuiz(){
+  var box=document.getElementById("quiz");
+  if(quiz.i>=quiz.list.length){
+    box.innerHTML='<div class="qtext">You got '+quiz.score+' of '+quiz.list.length+'.</div><p class="muted">'+(quiz.score===quiz.list.length?"Every one right.":"Questions come in a new order each round.")+'</p><button class="next" id="qAgain">Start a new round</button>';
+    document.getElementById("qAgain").onclick=startQuiz; return;
+  }
+  var it=quiz.list[quiz.i], q=it.q;
+  box.innerHTML='<div class="qhead"><span>Question '+(quiz.i+1)+' of '+quiz.list.length+'</span><span>Score '+quiz.score+'</span></div>'+
+    '<div class="qtext">'+q.q+'</div><div class="opts">'+it.order.map(function(oi){return '<button class="'+(q.p?'plain':'')+'" data-o="'+oi+'">'+esc(q.o[oi])+'</button>'}).join("")+'</div><div class="qexp" id="qExp"></div>';
+  box.querySelector(".opts").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b||quiz.answered) return; quiz.answered=true;
+    var pick=+b.dataset.o, right=pick===q.a; if(right) quiz.score++;
+    this.querySelectorAll("button").forEach(function(x){x.disabled=true; if(+x.dataset.o===q.a) x.classList.add("right"); else if(x===b) x.classList.add("wrong")});
+    document.getElementById("qExp").innerHTML='<b>'+(right?"Right.":"Not quite.")+'</b> '+q.e+'<br><button class="next" id="qNext">'+(quiz.i+1<quiz.list.length?"Next question":"See score")+'</button>';
+    document.getElementById("qNext").onclick=function(){quiz.i++; quiz.answered=false; renderQuiz()};
+  });
+}
+
+/* ---------- Platform switching ---------- */
+function setPlat(p){
+  state.plat=p; store.set("rl-plat",p);
+  document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plat===p))});
+  buildAddressing();
+}
+document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(b) setPlat(b.dataset.plat)});
+setPlat(state.plat);
+})();
+</script>
+</body>
+</html>

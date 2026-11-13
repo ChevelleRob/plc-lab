@@ -11,7 +11,8 @@ developed and will be added soon.
 
 | Tool | Folder | What it covers |
 |------|--------|----------------|
-| Timers & Addressing | [`timers/`](timers/) | TON / TOF / RTO (TONR) on a live rung, timing diagram, and I/O addressing for all three platforms |
+| Addressing | [`addressing/`](addressing/) | How addresses are built on each platform: tap-to-explain breakdowns, quick reference and a quiz |
+| Timers | [`timers/`](timers/) | TON / TOF / RTO (TONR) on a live rung with a timing diagram |
 
 ## Who it's for
 

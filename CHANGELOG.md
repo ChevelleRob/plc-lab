@@ -5,9 +5,18 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v1.1** Timers & Addressing split into two cards: Addressing and Timers
 - **v1.0** First version: home page linking to each tool
 
-## Timers & Addressing (`timers/`)
+## Addressing (`addressing/`)
+
+- **v1.0** Split out of Timers & Addressing v1.7 as its own tool. Same content: address breakdowns, quick reference and quiz for SLC 500, CompactLogix and S7
+
+## Timers (`timers/`)
+
+Called "Timers & Addressing" through v1.7.
+
+- **v2.0** Addressing moved to its own tool; renamed "Timers". Old `timers/#addressing` links forward to the Addressing tool
 
 - **v1.7** "PLC Lab" title in the header is now a link back to the home page
 - **v1.6** Renamed from Rung Lab to PLC Lab
