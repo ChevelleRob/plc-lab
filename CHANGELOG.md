@@ -39,6 +39,7 @@ Called "Timers & Addressing" through v1.7.
 
 ## Logic (`logic/`)
 
+- **v1.3** Latch/Unlatch: the (L) and (U) coils both highlight while the output bit is on and both go dark when it is off
 - **v1.2** Memory types reordered: Relay seal-in, Seal-in, Latch/Unlatch. Latch note covers first-scan unlatch rungs, with the first-pass bit for each PLC. Power loss now takes the rails, wires, contacts and lamp dark for 1.5 s
 - **v1.1** Seal-in button renamed Memory, with a selector for Seal-in, Latch/Unlatch and Relay seal-in. Seal-in rung reordered: Stop first, then Start with the seal-in contact, then Output. New Latch/Unlatch rungs (Stop as an NC instruction) and a hardwired relay seal-in circuit with no PLC. Simulate power loss button
 - **v1.0** First version. Gates: NOT, AND, OR, NAND and NOR with switches, live ladder rung, gate symbol and truth table. Seal-in with a NO Start button and an NC-wired Stop button programmed as a NO instruction, field wiring diagram and input-bit table. Timing diagram for all. Generic tags, not tied to a PLC brand

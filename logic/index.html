@@ -191,7 +191,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 <body class="has-bar">
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Logic practice</span><span class="ver">v1.2</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Logic practice</span><span class="ver">v1.3</span></div>
     <div class="plats" role="group" aria-label="Logic type">
       <button data-type="NOT">NOT</button>
       <button data-type="AND">AND</button>
@@ -339,7 +339,7 @@ function buildLadder(){
   if(k==="LATCH"){
     H=172;
     o+=wire("one",L,y,60,y)+contact(60,y,"st","Start_PB","NO")+wire("st",76,y,CX,y)+coil(CX,y,"out","Output","L")+wire("st",CX+28,y,R,y);
-    o+=wire("one",L,y2,60,y2)+contact(60,y2,"nsp","Stop_PB","NC")+wire("nsp",76,y2,CX,y2)+coil(CX,y2,"nsp","Output","U")+wire("nsp",CX+28,y2,R,y2);
+    o+=wire("one",L,y2,60,y2)+contact(60,y2,"nsp","Stop_PB","NC")+wire("nsp",76,y2,CX,y2)+coil(CX,y2,"out","Output","U")+wire("nsp",CX+28,y2,R,y2);
     o+='<text class="tag" x="180" y="'+(y-26)+'" text-anchor="middle">Rung 1: Latch</text><text class="tag" x="180" y="'+(y2-26)+'" text-anchor="middle">Rung 2: Unlatch (runs last)</text>';
     svg("ladder",H,rails(H)+o,"Latch and unlatch rungs"); return;
   }
