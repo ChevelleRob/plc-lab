@@ -39,4 +39,4 @@ Called "Timers & Addressing" through v1.7.
 
 ## Logic (`logic/`)
 
-- **v1.0** First version. Gates: NOT, AND, OR, NAND and NOR with switches, live ladder rung, gate symbol and truth table. Memory: seal-in (Stop first, then Start with the seal-in contact), Latch/Unlatch, and a hardwired relay seal-in with no PLC; NO Start button and NC-wired Stop button, field wiring diagram, input-bit table and a power-loss button. Timing diagram for all. Generic tags, not tied to a PLC brand
+- **v1.0** First version. Gates: NOT, AND, OR, NAND and NOR with switches, live ladder rung, gate symbol and truth table. Memory: a hardwired relay seal-in with no PLC, PLC seal-in (Stop first, then Start with the seal-in contact) and Latch/Unlatch with a note on first-scan unlatch rungs; NO Start button and NC-wired Stop button, field wiring diagram, input-bit table, and a power-loss button that briefly takes everything dark. Timing diagram for all. Generic tags, not tied to a PLC brand
