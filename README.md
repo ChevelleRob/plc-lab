@@ -14,7 +14,7 @@ developed and will be added soon.
 | Addressing | [`addressing/`](addressing/) | How addresses are built on each platform: tap-to-explain breakdowns, a side-by-side comparison of all five PLCs, quick reference and a quiz |
 | Timers | [`timers/`](timers/) | On-delay, off-delay and retentive timers on a live rung with a timing diagram, for all five PLCs |
 | Counters | [`counters/`](counters/) | Up, down and up/down counters on a live rung with momentary pushbuttons and a timing diagram, for all five PLCs |
-| Logic | [`logic/`](logic/) | NOT, AND, OR, NAND and NOR as ladder, gate symbol and truth table. Memory: seal-in, latch/unlatch and a hardwired relay seal-in, with an NC-wired Stop button. Generic tags |
+| Logic | [`logic/`](logic/) | NOT, AND, OR, NAND and NOR as ladder, gate symbol and truth table. Memory: hardwired relay seal-in, seal-in, latch/unlatch, and latch/unlatch with a first-scan reset, with an NC-wired Stop button. Generic tags |
 
 ## Who it's for
 

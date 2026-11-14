@@ -170,6 +170,10 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .ladder .pbbar{transition:transform .06s}
 /* Memory page */
 .seg button{white-space:nowrap}
+#memSeg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+#memSeg button:nth-child(3){border-right:0}
+#memSeg button{padding:9px 2px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#memSeg button.wide{grid-column:1/-1;border-top:1.5px solid var(--line);border-right:0}
 .pwr{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
 .pwr .next:disabled{opacity:.5;cursor:default}
 .pwr .next{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer}
@@ -191,7 +195,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 <body class="has-bar">
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Logic practice</span><span class="ver">v1.3</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Logic practice</span><span class="ver">v1.4</span></div>
     <div class="plats" role="group" aria-label="Logic type">
       <button data-type="NOT">NOT</button>
       <button data-type="AND">AND</button>
@@ -208,7 +212,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
     <div id="memWrap" hidden>
       <div class="lbl">Memory type</div>
       <div class="seg" id="memSeg" role="group" aria-label="Memory type">
-        <button data-mem="RELAY">Relay seal-in</button><button data-mem="SEAL">Seal-in</button><button data-mem="LATCH">Latch/Unlatch</button>
+        <button data-mem="RELAY">Relay seal-in</button><button data-mem="SEAL">Seal-in</button><button data-mem="LATCH">Latch/Unlatch</button><button data-mem="LATCHFS" class="wide">Latch/Unlatch + first scan</button>
       </div>
     </div>
     <h2 id="lTitle"></h2>
@@ -255,13 +259,14 @@ var store = {
   get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
   set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 };
-var TYPES=["NOT","AND","OR","NAND","NOR","MEM"], MEMS=["RELAY","SEAL","LATCH"];
+var TYPES=["NOT","AND","OR","NAND","NOR","MEM"], MEMS=["RELAY","SEAL","LATCH","LATCHFS"];
+function latchy(k){ return k==="LATCH"||k==="LATCHFS" }
 var state = {
   type: store.get("pl-logic") || "AND",
   mem: store.get("pl-mem") || "RELAY",
   a:false, b:false,          /* gate switches (maintained) */
   stP:false, spP:false,      /* seal-in pushbuttons: pressed or not */
-  out:false, power:true, hist:[], t:0, lastSample:-1
+  out:false, power:true, fsUntil:-1, hist:[], t:0, lastSample:-1
 };
 if(TYPES.indexOf(state.type)<0) state.type="AND";
 if(MEMS.indexOf(state.mem)<0) state.mem="RELAY";
@@ -286,6 +291,9 @@ var INFO = {
   LATCH:{title:"Latch / Unlatch", desc:"Two output instructions share one bit. The Latch (L) coil turns the bit on and leaves it on, even after its rung goes false. Only the Unlatch (U) coil turns it off. No seal-in contact is needed.",
     tryIt:"<b>Try this:</b> tap Start: the output latches on. Tap Stop: the Unlatch rung clears it. Hold both together: both rungs run every scan, but Unlatch comes last, so the output ends each scan off.<br><br>Now latch the output on and press <b>Simulate power loss</b>. Unlike seal-in, the latched bit comes back on by itself when power returns.",
     note:"<p><b>Why is Stop an NC instruction here?</b> Stop is still wired NC, so its input bit is 1 at rest. The Unlatch rung must be true when Stop is <i>pressed</i>, which is when the bit is 0, so it uses an NC instruction. A broken Stop wire also makes the bit 0 and unlatches the output, so the wiring stays fail-safe.</p><p><b>Power loss:</b> on Allen-Bradley PLCs a latched bit keeps its state through a power loss, so the output can turn back on by itself when power returns. On Siemens and AutomationDirect PLCs it depends on whether the bit is in retentive memory. A machine that restarts on its own is a safety hazard.</p><p><b>Common practice:</b> add a rung that unlatches (resets) the output on the first scan after power-up, using the PLC\u2019s first-pass bit: <code>S:1/15</code> on the SLC 500, <code>S:FS</code> on Logix, the FirstScan system bit on S7, <code>SC2</code> on CLICK, <code>SP0</code> on DirectLOGIC. Then the output is always off when power comes back, and someone has to press Start again.</p><p><b>Names:</b> Allen-Bradley calls these OTL and OTU. Siemens draws Set and Reset coils, <code>(S)</code> and <code>(R)</code>. AutomationDirect uses SET and RST.</p>"},
+  LATCHFS:{title:"Latch / Unlatch + first scan", desc:"The same Latch and Unlatch rungs, plus one more at the top of the program. The PLC\u2019s first-scan bit is on for the first scan after power-up, and this rung uses it to unlatch the output. However the output was left when the power went out, it always starts off.",
+    tryIt:"<b>Try this:</b> tap Start to latch the output on, then press <b>Simulate power loss</b>. When power returns, watch Rung 0 flash: the first-scan bit unlatches the output and it stays off until someone presses Start. Compare it with the plain Latch/Unlatch page, where the output comes back on by itself.",
+    note:"<p><b>The first-scan bit is on for exactly one scan</b>, a few milliseconds, then stays off until the next power-up or the next change to Run mode. Here it stays lit for about a second so you can see it.</p><p>Its name depends on the PLC: <code>S:1/15</code> (first pass) on the SLC 500, <code>S:FS</code> on Logix, the FirstScan system bit on S7 (often <code>%M1.0</code>), <code>SC2</code> on CLICK and <code>SP0</code> on DirectLOGIC. This page uses the generic tag <code>First_Scan</code>.</p><p>Putting the rung at the top of the program means the output is cleared before any other logic runs.</p>"},
   RELAY:{title:"Relay seal-in (no PLC)", desc:"The same seal-in, built only from wires, two pushbuttons and a control relay, CR1. Pressing Start energizes CR1, and one of CR1’s own contacts, wired around Start, holds it on. A second CR1 contact lights the lamp.",
     tryIt:"<b>Try this:</b> tap Start and let go. CR1 pulls in and its holding contact keeps it in. Tap Stop: the NC button opens the circuit and CR1 drops out. Press <b>Simulate power loss</b> with CR1 on: it drops out too, so the circuit won’t restart by itself.",
     note:"<p>This is the classic <b>three-wire control</b> circuit used with motor starters. There the holding contact is the starter’s auxiliary contact, often labeled M.</p><p>Compare it with the PLC seal-in rung: they have the same shape. Here the Stop button is drawn NC because the real button sits in the circuit. In the PLC version the NC button is out in the field wiring, so the program uses a NO instruction.</p>"}
@@ -298,15 +306,15 @@ function inBits(){ return {st:state.stP, sp:!state.spP} } /* Stop is wired NC: b
 /* ---------- One scan ---------- */
 function scan(){
   var k=K(), i=inBits();
-  if(!state.power){ if(k!=="LATCH") state.out=false; return; }  /* no scan while off; non-retained outputs drop */
+  if(!state.power){ if(!latchy(k)) state.out=false; return; }  /* no scan while off; non-retained outputs drop */
   if(k==="SEAL"||k==="RELAY") state.out = i.sp && (i.st || state.out);
-  else if(k==="LATCH"){ if(i.st) state.out=true; if(!i.sp) state.out=false; }  /* Unlatch rung runs last */
+  else if(latchy(k)){ if(i.st) state.out=true; if(!i.sp) state.out=false; }  /* Unlatch rung runs last */
   else state.out = gateOut(state.type,state.a,state.b);
 }
 function sig(){
   if(!state.power) return {stP:state.stP, spP:state.spP};  /* everything dark */
   var s={one:true, pwr:true, out:state.out};
-  if(isMem()){ var i=inBits(); s.st=i.st; s.sp=i.sp; s.nsp=!i.sp; s.spst=i.sp&&i.st; s.spout=i.sp&&state.out; s.pw=i.sp&&(i.st||state.out); s.stP=state.stP; s.spP=state.spP; }
+  if(isMem()){ var i=inBits(); s.st=i.st; s.sp=i.sp; s.nsp=!i.sp; s.spst=i.sp&&i.st; s.spout=i.sp&&state.out; s.pw=i.sp&&(i.st||state.out); s.stP=state.stP; s.spP=state.spP; s.fs=state.t<state.fsUntil; }
   else { s.a=state.a; s.b=state.b; s.na=!state.a; s.nb=!state.b; }
   return s;
 }
@@ -336,12 +344,18 @@ function buildLadder(){
   var t=state.type, o="", y=50, y2=118, H, CX=296, k=K();
   document.getElementById("ladLbl").textContent = k==="RELAY" ? "Hardwired circuit (no PLC)" : "Program (ladder)";
   if(k==="RELAY"){ buildRelay(); return; }
-  if(k==="LATCH"){
-    H=172;
+  if(latchy(k)){
+    var fsr = k==="LATCHFS", y0=50;
+    if(fsr){ y+=68; y2+=68; }
+    H=fsr?240:172;
+    if(fsr){
+      o+=wire("one",L,y0,60,y0)+contact(60,y0,"fs","First_Scan","NO")+wire("fs",76,y0,CX,y0)+coil(CX,y0,"out","Output","U")+wire("fs",CX+28,y0,R,y0);
+      o+='<text class="tag" x="180" y="'+(y0-26)+'" text-anchor="middle">Rung 0: First scan unlatch</text>';
+    }
     o+=wire("one",L,y,60,y)+contact(60,y,"st","Start_PB","NO")+wire("st",76,y,CX,y)+coil(CX,y,"out","Output","L")+wire("st",CX+28,y,R,y);
     o+=wire("one",L,y2,60,y2)+contact(60,y2,"nsp","Stop_PB","NC")+wire("nsp",76,y2,CX,y2)+coil(CX,y2,"out","Output","U")+wire("nsp",CX+28,y2,R,y2);
     o+='<text class="tag" x="180" y="'+(y-26)+'" text-anchor="middle">Rung 1: Latch</text><text class="tag" x="180" y="'+(y2-26)+'" text-anchor="middle">Rung 2: Unlatch (runs last)</text>';
-    svg("ladder",H,rails(H)+o,"Latch and unlatch rungs"); return;
+    svg("ladder",H,rails(H)+o,fsr?"First-scan unlatch, latch and unlatch rungs":"Latch and unlatch rungs"); return;
   }
   if(t==="NOT"){
     H=92; o+=wire("one",L,y,60,y)+contact(60,y,"na","Button_A","NC")+wire("out",76,y,CX,y);
@@ -417,7 +431,7 @@ function pbSym(x,y,kind,pressedSig){
   return o;
 }
 function buildField(){
-  var k=K(); if(k!=="SEAL" && k!=="LATCH") return;
+  var k=K(); if(k!=="SEAL" && !latchy(k)) return;
   var o='<text class="tag" x="18" y="16">+24 V</text><line class="rail" data-sig="pwr" x1="18" y1="22" x2="18" y2="128"/>';
   [[52,"Start","NO","st","stP"],[118,"Stop","NC","sp","spP"]].forEach(function(r){
     var y=r[0];
@@ -488,7 +502,7 @@ function loop(ts){
   scan(); state.t+=dt;
   if(state.t-state.lastSample>=40){
     var s=sig();
-    state.hist.push({t:state.t, a:state.a, b:state.b, st:s.st, sp:s.sp, out:s.out});
+    state.hist.push({t:state.t, a:state.a, b:state.b, st:s.st, sp:s.sp, fs:s.fs, out:s.out});
     state.lastSample=state.t;
     while(state.hist.length && state.hist[0].t < state.t-21000) state.hist.shift();
   }
@@ -506,7 +520,7 @@ function drawChart(){
   if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
   var t=state.type;
-  var tr = isMem() ? [["Start","st"],["Stop","sp"],[K()==="RELAY"?"CR1":"Output","out"]] : t==="NOT" ? [["A","a"],["Output","out"]] : [["A","a"],["B","b"],["Output","out"]];
+  var tr = isMem() ? (K()==="LATCHFS" ? [["Start","st"],["Stop","sp"],["1st scan","fs"],["Output","out"]] : [["Start","st"],["Stop","sp"],[K()==="RELAY"?"CR1":"Output","out"]]) : t==="NOT" ? [["A","a"],["Output","out"]] : [["A","a"],["B","b"],["Output","out"]];
   var left=52, rowH=h/tr.length, win=20000, t1=state.t, t0=t1-win;
   var mut=cssVar("--muted"), live=cssVar("--live"), red=cssVar("--red"), amber=cssVar("--amber"), line=cssVar("--line");
   ctx.font='600 12px '+cssVar("--sans"); ctx.textBaseline="middle";
@@ -574,7 +588,7 @@ function setType(t,init){
   document.getElementById("tryBox").innerHTML=inf.tryIt;
   var nb=document.getElementById("noteBox"); nb.hidden=!inf.note; nb.innerHTML=inf.note||"";
   document.getElementById("gateWrap").hidden=seal;
-  document.getElementById("fieldWrap").hidden=!(K()==="SEAL"||K()==="LATCH");
+  document.getElementById("fieldWrap").hidden=!(K()==="SEAL"||latchy(K()));
   buildLadder(); buildGate(); buildField(); buildTable(); buildControls(); cacheEls(); render();
 }
 document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(b) setType(b.dataset.type)});
@@ -592,7 +606,12 @@ pwrBtn.addEventListener("click",function(){
     state.power=true; pwrBtn.disabled=false; pwrTimer=null;
     if(state.type+K()!==typeAtStart) return;
     var msg;
-    if(k==="LATCH") msg = was ? "Power is back. The output is ON again: the latched bit was retained. A first-scan unlatch rung would prevent this." : "Power is back. The output was off and stays off.";
+    if(k==="LATCHFS"){
+      /* First scan: Rung 0 unlatches the output before anything else runs */
+      state.out=false; state.fsUntil=state.t+800;
+      msg = was ? "Power is back. On the first scan, Rung 0 unlatched the output, so it stays off until someone presses Start." : "Power is back. The first-scan rung ran, and the output stays off.";
+    }
+    else if(k==="LATCH") msg = was ? "Power is back. The output is ON again: the latched bit was retained. The Latch/Unlatch + first scan page shows how to prevent this." : "Power is back. The output was off and stays off.";
     else msg = was ? "Power is back. The output is OFF until someone presses Start." : "Power is back. The output was already off.";
     document.getElementById("pwrMsg").textContent=msg;
   },1500);

@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v1.6** Logic card: v1.4
 - **v1.5** Added the Logic card
 - **v1.4** Added the Counters card
 - **v1.3** Timers card: v2.1, lists CLICK and DL06
@@ -39,6 +40,7 @@ Called "Timers & Addressing" through v1.7.
 
 ## Logic (`logic/`)
 
+- **v1.4** New memory type, Latch/Unlatch + first scan, on its own row under the other three: the latch rungs plus a Rung 0 that uses the first-scan bit to unlatch the output at power-up. Its first-scan bit flashes after Simulate power loss, and the timing diagram gets a first-scan trace
 - **v1.3** Latch/Unlatch: the (L) and (U) coils both highlight while the output bit is on and both go dark when it is off
 - **v1.2** Memory types reordered: Relay seal-in, Seal-in, Latch/Unlatch. Latch note covers first-scan unlatch rungs, with the first-pass bit for each PLC. Power loss now takes the rails, wires, contacts and lamp dark for 1.5 s
 - **v1.1** Seal-in button renamed Memory, with a selector for Seal-in, Latch/Unlatch and Relay seal-in. Seal-in rung reordered: Stop first, then Start with the seal-in contact, then Output. New Latch/Unlatch rungs (Stop as an NC instruction) and a hardwired relay seal-in circuit with no PLC. Simulate power loss button
