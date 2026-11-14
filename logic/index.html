@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab: PLC logic practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --wire:#8A939A; --live:#178F4C; --liveglow:rgba(23,143,76,.22);
+  --amber:#B97C00; --red:#C13D2B; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5; --c2:#9A6400; --c2bg:#F6E7C8; --c3:#177A45; --c3bg:#D6EEDF; --c4:#7A3C99; --c4bg:#EBDDF2;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+    --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+  --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+/* Header: a nameplate, like an engraved panel tag */
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand h1 a{color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:5px;padding:4px 0}
+.brand h1 a::before{content:"\2039";opacity:.6;font-weight:600}
+.brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+.plats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:10px}
+.plats button{grid-column:span 2;min-width:0;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 4px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plats button:nth-child(n+4){grid-column:span 3}
+.plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+h3{font-size:17px;margin:20px 0 6px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.seg{display:flex;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-weight:600;cursor:pointer;border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+
+/* Ladder: the one bold element */
+.ladder{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;margin-top:14px;padding:6px 2px}
+.ladder svg{display:block;width:100%;height:auto}
+.ladder .rail{stroke:var(--live);stroke-width:4}
+.ladder .w{stroke:var(--wire);stroke-width:2.5;fill:none;transition:stroke .08s}
+.ladder .w.on{stroke:var(--live);stroke-width:3.5;filter:drop-shadow(0 0 3px var(--liveglow))}
+.ladder .cb{stroke:var(--ink);stroke-width:2.5}
+.ladder .cfill{fill:transparent}
+.ladder .cfill.on{fill:var(--live)}
+.ladder .coil{fill:none;stroke:var(--ink);stroke-width:2.5}
+.ladder .coil.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .box{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder text{fill:var(--ink);font-family:var(--sans);font-size:12px}
+.ladder .addr{font-family:var(--mono);font-size:10.5px;fill:var(--c1)}
+.ladder .tag{font-size:11px;fill:var(--muted)}
+.ladder .big{font-weight:700;font-size:15px}
+.ladder .val{font-family:var(--mono);font-size:12px;font-weight:700}
+.ladder .ind{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .ind.on{fill:var(--live);stroke:var(--live)}
+.ladder .indt{font-size:10px;font-weight:700}
+.ladder .indt.on{fill:#fff}
+.lamp{fill:var(--surface2);stroke:var(--ink);stroke-width:1.5}
+.lamp.on{fill:var(--live);filter:drop-shadow(0 0 6px var(--live))}
+
+/* Controls */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);color:var(--onpanel);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 12px rgba(0,0,0,.25)}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inds{display:flex;align-items:center;gap:14px;min-width:0}
+.pilot{display:flex;align-items:center;gap:8px}
+.pilot b{display:block;font-size:14px}
+.pilot small{display:block;font-family:var(--mono);font-size:11px;opacity:.75}
+.plamp{width:40px;height:40px;border-radius:50%;flex:none;background:#3A4650;box-shadow:inset 0 0 0 3px rgba(255,255,255,.15);transition:background .08s}
+.plamp.on{background:var(--live);box-shadow:0 0 16px var(--live)}
+.bits{display:flex;gap:8px}
+.bl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
+.bl i{width:16px;height:16px;border-radius:50%;background:#3A4650;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+.bl i.on{background:var(--live);box-shadow:0 0 8px var(--live)}
+.acts{display:flex;gap:14px;flex:none}
+.bar .switch,.bar .pb{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .knob{width:44px;height:44px;background:#1A2228}
+.bar .pb .cap{width:44px;height:44px}
+.bar .switch b,.bar .pb b{font-size:13px}
+.bar .switch small,.bar .pb small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.switch{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left}
+.knob{width:46px;height:46px;border-radius:50%;background:var(--panel);position:relative;flex:none;box-shadow:inset 0 0 0 3px var(--wire)}
+.knob::after{content:"";position:absolute;left:50%;top:7px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:var(--onpanel);transform:rotate(-40deg);transform-origin:50% 16px;transition:transform .15s}
+.switch[aria-pressed="true"] .knob::after{transform:rotate(40deg)}
+.switch[aria-pressed="true"] .knob{box-shadow:inset 0 0 0 3px var(--live)}
+.switch b{display:block;font-size:16px}
+.switch small{color:var(--muted);font-size:13px}
+.pb{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;user-select:none;-webkit-user-select:none;touch-action:none}
+.pb .cap{width:46px;height:46px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 4px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb.held .cap{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb b{display:block;font-size:16px}
+.pb small{color:var(--muted);font-size:13px}
+
+.status{width:100%;border-collapse:collapse;margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;font-size:15px}
+.status td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+.status tr:first-child td{border-top:0}
+.status td:first-child{font-family:var(--mono);font-size:13px;color:var(--c1);white-space:nowrap}
+.status td.v{font-family:var(--mono);font-weight:700;white-space:nowrap;width:5.5em}
+.bit{display:inline-block;min-width:2.2em;text-align:center;border-radius:4px;padding:0 4px;background:var(--surface2);color:var(--muted)}
+.bit.on{background:var(--live);color:#fff}
+.status td.m{color:var(--muted);font-size:14px}
+
+.chartbox{margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.chartbox canvas{display:block;width:100%;height:210px}
+.note{margin-top:14px;padding:12px 14px;border-left:4px solid var(--amber);background:var(--surface);border-radius:0 8px 8px 0}
+.note p{margin:4px 0}
+.try{margin-top:12px;padding:12px 14px;border-left:4px solid var(--live);background:var(--surface);border-radius:0 8px 8px 0}
+
+.qtext code,.qexp code,.note code,.try code,p code{font-family:var(--mono);font-size:.9em;color:var(--c1)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* Counters: momentary pushbuttons, one cap color per job */
+.pb .cap,.pb.held .cap{background:var(--cap,var(--red))}
+.pb .cap{box-shadow:0 4px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.held .cap{box-shadow:0 1px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.k-up{--cap:var(--live)} .pb.k-dn{--cap:var(--amber)} .pb.k-rs{--cap:var(--red)} .pb.k-ld{--cap:var(--c1)}
+.bar .acts{gap:10px}
+.bar .inds{gap:10px}
+@media (max-width:400px){ .pilot small{display:none} .bar .pb b{font-size:12px} }
+
+/* Logic: six type buttons in a 3 x 2 grid */
+.plats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.plats button,.plats button:nth-child(n+4){grid-column:auto}
+.pb.k-st{--cap:var(--live)} .pb.k-sp{--cap:var(--red)}
+.bar .switch{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .switch small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+/* Gate symbol and field wiring */
+.ladder .gate{fill:var(--surface2);stroke:var(--ink);stroke-width:2.5;transition:fill .08s,stroke .08s}
+.ladder .gate.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .gl{font-family:var(--mono);font-weight:700;font-size:15px;fill:var(--ink)}
+.ladder .gname{font-weight:700;font-size:13px;fill:var(--muted)}
+.ladder .term{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .inbox{fill:var(--surface2);stroke:var(--line);stroke-width:1.5}
+.ladder .pbbar{transition:transform .06s}
+/* Truth table */
+.tt td{text-align:center;font-family:var(--mono)}
+.tt td:first-child{color:var(--ink)}
+.tt tr.th td{font-family:var(--sans);font-weight:600;background:var(--surface2);color:var(--ink)}
+.tt tr.cur td{background:var(--liveglow)}
+.tt tr.cur td:first-child{box-shadow:inset 4px 0 0 var(--live)}
+</style>
+</head>
+<body class="has-bar">
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Logic practice</span><span class="ver">v1.0</span></div>
+    <div class="plats" role="group" aria-label="Logic type">
+      <button data-type="NOT">NOT</button>
+      <button data-type="AND">AND</button>
+      <button data-type="OR">OR</button>
+      <button data-type="NAND">NAND</button>
+      <button data-type="NOR">NOR</button>
+      <button data-type="SEAL">Seal-in</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <h2 id="lTitle"></h2>
+    <p id="lDesc"></p>
+
+    <div class="lbl">Program (ladder)</div>
+    <div class="ladder" id="ladder" aria-label="Live ladder logic"></div>
+
+    <div id="gateWrap">
+      <div class="lbl">Gate symbol</div>
+      <div class="ladder" id="gate" aria-label="Logic gate symbol"></div>
+    </div>
+    <div id="fieldWrap" hidden>
+      <div class="lbl">Field wiring (what is connected to the input card)</div>
+      <div class="ladder" id="field" aria-label="Pushbutton wiring"></div>
+    </div>
+
+    <div class="lbl" id="tblLbl">Truth table</div>
+    <table class="status tt" id="tbl"></table>
+
+    <div class="lbl">Timing diagram (last 20 seconds)</div>
+    <div class="chartbox"><canvas id="chart" aria-label="Timing diagram"></canvas></div>
+
+    <div class="try" id="tryBox"></div>
+    <div class="note" id="noteBox" hidden></div>
+  </section>
+</main>
+
+<div class="bar" id="ctlBar">
+  <div class="in">
+    <div class="inds">
+      <div class="pilot"><span class="plamp" id="pLamp" aria-hidden="true"></span><span><b>Output</b><small>lamp</small></span></div>
+      <div class="bits" id="pBits" aria-label="Input bits"></div>
+    </div>
+    <div class="acts" id="acts"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var store = {
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var TYPES=["NOT","AND","OR","NAND","NOR","SEAL"];
+var state = {
+  type: store.get("pl-logic") || "AND",
+  a:false, b:false,          /* gate switches (maintained) */
+  stP:false, spP:false,      /* seal-in pushbuttons: pressed or not */
+  out:false, hist:[], t:0, lastSample:-1
+};
+if(TYPES.indexOf(state.type)<0) state.type="AND";
+
+var INFO = {
+  NOT:{title:"NOT", desc:"The output is the opposite of the input. In ladder that is one normally closed (NC) instruction, which passes power when its bit is 0. Allen-Bradley calls it XIO.",
+    tryIt:"<b>Try this:</b> flip A on and off. The lamp does the opposite. Notice the NC instruction is highlighted (true) while A is off."},
+  AND:{title:"AND", desc:"The output is on only when A and B are both on. In ladder that is two normally open (NO) instructions in series: power has to get through both.",
+    tryIt:"<b>Try this:</b> step A and B through all four combinations and watch the highlighted row of the truth table follow. Only one row turns the lamp on."},
+  OR:{title:"OR", desc:"The output is on when A or B is on, or both. In ladder that is two NO instructions in parallel: power can take either path.",
+    tryIt:"<b>Try this:</b> turn on A, then B, then turn A off. The lamp stays on as long as either path is closed."},
+  NAND:{title:"NAND (NOT AND)", desc:"The opposite of AND: the output is on unless A and B are both on. In ladder that is two NC instructions in parallel.",
+    tryIt:"<b>Try this:</b> compare its truth table with AND. Every output is flipped. The lamp only goes off when both switches are on, because then both NC paths are open."},
+  NOR:{title:"NOR (NOT OR)", desc:"The opposite of OR: the output is on only when neither A nor B is on. In ladder that is two NC instructions in series.",
+    tryIt:"<b>Try this:</b> compare its truth table with OR. Turning on either switch opens one of the series NC instructions and breaks the rung."},
+  SEAL:{title:"Seal-in (memory)", desc:"Start turns the output on, and the output keeps itself on through its own contact, wired in parallel with Start. Stop breaks the rung and drops it out. This is memory: the output depends on what happened before, not only on what the inputs are doing now.",
+    tryIt:"<b>Try this:</b> tap Start and let go. The output stays on, held by its own seal-in contact. Now tap Stop. Then hold Start and press Stop at the same time: Stop wins, so this rung is stop-dominant.<br><br>Watch the Stop input bit: it reads <b>1</b> while nobody touches the button.",
+    note:"<p><b>Why is Stop wired NC but programmed NO?</b> The Stop button is a normally closed (NC) switch, so current flows into the input while it is not pressed and the input bit is 1. The program uses a normally open (NO) instruction for it, which is true while the bit is 1. Pressing Stop opens the switch, the bit drops to 0, and the NO instruction breaks the rung.</p><p><b>Why bother?</b> It is fail-safe. If the wire to the Stop button breaks or a terminal comes loose, the input goes to 0, exactly like pressing Stop, and the machine stops. Wired NO, a broken wire would leave you with a Stop button that does nothing.</p><p>Allen-Bradley names the instructions XIC (NO) and XIO (NC). Siemens and AutomationDirect draw the same NO and NC contacts.</p>"}
+};
+function gateOut(t,a,b){
+  return t==="NOT"? !a : t==="AND"? a&&b : t==="OR"? a||b : t==="NAND"? !(a&&b) : !(a||b);
+}
+function inBits(){ return {st:state.stP, sp:!state.spP} } /* Stop is wired NC: bit is 1 while not pressed */
+
+/* ---------- One scan ---------- */
+function scan(){
+  if(state.type==="SEAL"){ var i=inBits(); state.out = (i.st || state.out) && i.sp; }
+  else state.out = gateOut(state.type,state.a,state.b);
+}
+function sig(){
+  var s={one:true, out:state.out};
+  if(state.type==="SEAL"){ var i=inBits(); s.st=i.st; s.sp=i.sp; s.br=i.st||state.out; s.pw=s.br&&i.sp; s.stP=state.stP; s.spP=state.spP; s.spWire=!state.spP; }
+  else { s.a=state.a; s.b=state.b; s.na=!state.a; s.nb=!state.b; }
+  return s;
+}
+
+/* ---------- Drawing helpers ---------- */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+var L=10, R=350;
+function contact(x,y,s,tag,kind){
+  return '<text class="addr" x="'+(x+8)+'" y="'+(y-18)+'" text-anchor="middle">'+esc(tag)+'</text>'+
+    '<text class="tag" x="'+(x+8)+'" y="'+(y+27)+'" text-anchor="middle">'+kind+'</text>'+
+    '<rect class="cfill" data-sig="'+s+'" x="'+(x+2)+'" y="'+(y-10)+'" width="12" height="20" rx="1"/>'+
+    '<line class="cb" x1="'+x+'" y1="'+(y-12)+'" x2="'+x+'" y2="'+(y+12)+'"/>'+
+    '<line class="cb" x1="'+(x+16)+'" y1="'+(y-12)+'" x2="'+(x+16)+'" y2="'+(y+12)+'"/>'+
+    (kind==="NC"?'<line class="cb" x1="'+(x-3)+'" y1="'+(y+12)+'" x2="'+(x+19)+'" y2="'+(y-12)+'"/>':'');
+}
+function coil(x,y,s,tag){
+  return '<text class="addr" x="'+(x+14)+'" y="'+(y-18)+'" text-anchor="middle">'+esc(tag)+'</text>'+
+    '<path class="coil" data-sig="'+s+'" d="M'+(x+6)+' '+(y-12)+' Q'+(x-3)+' '+y+' '+(x+6)+' '+(y+12)+' M'+(x+22)+' '+(y-12)+' Q'+(x+31)+' '+y+' '+(x+22)+' '+(y+12)+'"/>';
+}
+function wire(s,x1,y1,x2,y2){return '<line class="w" data-sig="'+s+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'}
+function rails(H){return '<line class="rail" x1="'+L+'" y1="8" x2="'+L+'" y2="'+(H-8)+'"/><line class="rail" x1="'+R+'" y1="8" x2="'+R+'" y2="'+(H-8)+'"/>'}
+function svg(id,H,out,label){ document.getElementById(id).innerHTML='<svg viewBox="0 0 360 '+H+'" role="img" aria-label="'+label+'">'+out+'</svg>'; }
+
+/* ---------- Ladder rung for each type ---------- */
+function buildLadder(){
+  var t=state.type, o="", y=50, y2=118, H, CX=296;
+  if(t==="NOT"){
+    H=92; o+=wire("one",L,y,60,y)+contact(60,y,"na","Button_A","NC")+wire("out",76,y,CX,y);
+  } else if(t==="AND"||t==="NOR"){
+    var k=t==="AND"?"NO":"NC", s1=t==="AND"?"a":"na", s2=t==="AND"?"b":"nb";
+    H=92; o+=wire("one",L,y,60,y)+contact(60,y,s1,"Button_A",k)+wire(s1,76,y,150,y)+contact(150,y,s2,"Button_B",k)+wire("out",166,y,CX,y);
+  } else if(t==="OR"||t==="NAND"){
+    var k2=t==="OR"?"NO":"NC", p1=t==="OR"?"a":"na", p2=t==="OR"?"b":"nb";
+    H=158;
+    o+=wire("one",L,y,60,y)+contact(60,y,p1,"Button_A",k2)+wire(p1,76,y,140,y);
+    o+=wire("one",L,y2,60,y2)+contact(60,y2,p2,"Button_B",k2)+wire(p2,76,y2,140,y2);
+    o+=wire("out",140,y,140,y2)+wire("out",140,y,CX,y);
+  } else {
+    /* Seal-in: (Start OR Output) AND Stop -> Output */
+    H=158;
+    o+=wire("one",L,y,60,y)+contact(60,y,"st","Start_PB","NO")+wire("st",76,y,130,y);
+    o+=wire("one",L,y2,60,y2)+contact(60,y2,"out","Output","NO · seal-in")+wire("out",76,y2,130,y2);
+    o+=wire("br",130,y,130,y2)+wire("br",130,y,190,y)+contact(190,y,"sp","Stop_PB","NO")+wire("pw",206,y,CX,y);
+  }
+  o+=coil(CX,y,"out","Output")+wire("out",CX+28,y,R,y);
+  svg("ladder",H,rails(H)+o,"Ladder logic for "+INFO[t].title);
+}
+
+/* ---------- Gate symbol ---------- */
+function buildGate(){
+  var t=state.type; if(t==="SEAL") return;
+  var o="", ya=35, yb=75, ym=55, body, tip, inEnd;
+  if(t==="NOT"){ body='M140 22 L206 55 L140 88 Z'; tip=206; inEnd=140; }
+  else if(t==="AND"||t==="NAND"){ body='M140 15 H180 A40 40 0 0 1 180 95 H140 Z'; tip=220; inEnd=140; }
+  else { body='M134 15 Q164 55 134 95 Q190 95 222 55 Q190 15 134 15 Z'; tip=222; inEnd=146; }
+  var bub = t==="NOT"||t==="NAND"||t==="NOR";
+  var outX = bub ? tip+12 : tip;
+  if(t==="NOT"){
+    o+='<text class="gl" x="22" y="'+(ym+5)+'">A</text>'+wire("a",40,ym,inEnd,ym);
+  } else {
+    o+='<text class="gl" x="22" y="'+(ya+5)+'">A</text>'+wire("a",40,ya,inEnd,ya)+
+       '<text class="gl" x="22" y="'+(yb+5)+'">B</text>'+wire("b",40,yb,inEnd,yb);
+  }
+  o+='<path class="gate" data-sig="out" d="'+body+'"/>';
+  if(bub) o+='<circle class="gate" data-sig="out" cx="'+(tip+6)+'" cy="'+ym+'" r="6"/>';
+  o+=wire("out",outX,ym,300,ym)+'<circle class="ind" data-sig="out" cx="316" cy="'+ym+'" r="13"/>'+
+     '<text class="tag" x="316" y="'+(ym+30)+'" text-anchor="middle">Output</text>'+
+     '<text class="gname" x="'+(t==="NOT"?162:172)+'" y="'+(ym+5)+'" text-anchor="middle">'+t+'</text>';
+  svg("gate",112,o,t+" gate symbol");
+}
+
+/* ---------- Field wiring for seal-in ---------- */
+function pbSym(x,y,kind,pressedSig){
+  /* terminals at x and x+44; NO bar sits above and touches when pressed; NC bar touches until pressed */
+  var o='<circle class="term" cx="'+x+'" cy="'+y+'" r="3.5"/><circle class="term" cx="'+(x+44)+'" cy="'+y+'" r="3.5"/>';
+  o+='<g class="pbbar" data-press="'+pressedSig+'" data-kind="'+kind+'">'+
+     '<line class="cb" x1="'+(x-4)+'" y1="'+(y+(kind==="NO"?-10:4))+'" x2="'+(x+48)+'" y2="'+(y+(kind==="NO"?-10:4))+'"/>'+
+     '<line class="cb" x1="'+(x+22)+'" y1="'+(y+(kind==="NO"?-10:4))+'" x2="'+(x+22)+'" y2="'+(y-22)+'"/>'+
+     '<line class="cb" x1="'+(x+14)+'" y1="'+(y-22)+'" x2="'+(x+30)+'" y2="'+(y-22)+'"/></g>';
+  return o;
+}
+function buildField(){
+  if(state.type!=="SEAL") return;
+  var o='<text class="tag" x="18" y="16">+24 V</text><line class="rail" x1="18" y1="22" x2="18" y2="128"/>';
+  [[52,"Start","NO","st","stP"],[118,"Stop","NC","sp","spP"]].forEach(function(r){
+    var y=r[0];
+    o+=wire("one",18,y,120,y)+pbSym(124,y,r[2],r[4])+wire(r[3],172,y,250,y)+
+      '<text class="tag" x="146" y="'+(y+(r[2]==="NO"?16:22))+'" text-anchor="middle">'+r[1]+' ('+r[2]+')</text>'+
+      '<rect class="inbox" x="250" y="'+(y-13)+'" width="96" height="26" rx="4"/>'+
+      '<text x="258" y="'+(y+4)+'" style="font-size:12px">'+r[1]+' input</text>'+
+      '<circle class="ind" data-sig="'+r[3]+'" cx="332" cy="'+y+'" r="7"/>';
+  });
+  svg("field",150,o,"Start and Stop pushbutton wiring");
+}
+
+/* ---------- Table: truth table, or what the PLC sees ---------- */
+function buildTable(){
+  var t=state.type, h;
+  if(t==="SEAL"){
+    document.getElementById("tblLbl").textContent="What the PLC sees";
+    h='<tr class="th"><td>Device</td><td>Wired</td><td>Pressed?</td><td>Input bit</td></tr>'+
+      '<tr><td>Start_PB</td><td>NO</td><td id="stP"></td><td id="stB"></td></tr>'+
+      '<tr><td>Stop_PB</td><td>NC</td><td id="spP"></td><td id="spB"></td></tr>'+
+      '<tr><td>Output</td><td></td><td></td><td id="oB"></td></tr>';
+  } else {
+    document.getElementById("tblLbl").textContent="Truth table";
+    var rows = t==="NOT" ? [[0],[1]] : [[0,0],[0,1],[1,0],[1,1]];
+    h='<tr class="th"><td>A</td>'+(t==="NOT"?'':'<td>B</td>')+'<td>Output</td></tr>';
+    rows.forEach(function(r){
+      var o=gateOut(t,!!r[0],!!r[1]);
+      h+='<tr data-row="'+r.join("")+'"><td>'+r[0]+'</td>'+(t==="NOT"?'':'<td>'+r[1]+'</td>')+'<td><span class="bit'+(o?' on':'')+'">'+(o?1:0)+'</span></td></tr>';
+    });
+  }
+  document.getElementById("tbl").innerHTML=h;
+}
+function bitHtml(v){return '<span class="bit'+(v?' on':'')+'">'+(v?1:0)+'</span>'}
+function setHtml(id,h){var e=document.getElementById(id); if(e && e.innerHTML!==h) e.innerHTML=h}
+
+/* ---------- Render ---------- */
+var sigEls=[], pbEls=[], rowEls=[];
+function cacheEls(){
+  sigEls=[].slice.call(document.querySelectorAll("[data-sig]"));
+  pbEls=[].slice.call(document.querySelectorAll(".pbbar"));
+  rowEls=[].slice.call(document.querySelectorAll("#tbl tr[data-row]"));
+}
+function render(){
+  var s=sig(), t=state.type;
+  sigEls.forEach(function(e){ e.classList.toggle("on", !!s[e.getAttribute("data-sig")]) });
+  pbEls.forEach(function(g){ var p=!!s[g.getAttribute("data-press")], no=g.getAttribute("data-kind")==="NO";
+    var dy = no ? (p?7:0) : (p?10:0); var tr="translate(0,"+dy+")"; if(g.getAttribute("transform")!==tr) g.setAttribute("transform",tr); });
+  document.getElementById("pLamp").classList.toggle("on",state.out);
+  if(t==="SEAL"){
+    setHtml("stP",state.stP?"Yes":"No"); setHtml("spP",state.spP?"Yes":"No");
+    setHtml("stB",bitHtml(s.st)); setHtml("spB",bitHtml(s.sp)); setHtml("oB",bitHtml(state.out));
+  } else {
+    var key = t==="NOT" ? (state.a?"1":"0") : (state.a?"1":"0")+(state.b?"1":"0");
+    rowEls.forEach(function(r){ r.classList.toggle("cur", r.getAttribute("data-row")===key) });
+  }
+  drawChart();
+}
+var last=null;
+function loop(ts){
+  if(last===null) last=ts;
+  var dt=Math.min(ts-last,100); last=ts;
+  scan(); state.t+=dt;
+  if(state.t-state.lastSample>=40){
+    var s=sig();
+    state.hist.push({t:state.t, a:state.a, b:state.b, st:s.st, sp:s.sp, out:state.out});
+    state.lastSample=state.t;
+    while(state.hist.length && state.hist[0].t < state.t-21000) state.hist.shift();
+  }
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- Timing chart ---------- */
+var cv=document.getElementById("chart"), ctx=cv.getContext("2d");
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function drawChart(){
+  if(!ctx) return;
+  var dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  if(!w) return;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  var t=state.type;
+  var tr = t==="SEAL" ? [["Start","st"],["Stop","sp"],["Output","out"]] : t==="NOT" ? [["A","a"],["Output","out"]] : [["A","a"],["B","b"],["Output","out"]];
+  var left=52, rowH=h/tr.length, win=20000, t1=state.t, t0=t1-win;
+  var mut=cssVar("--muted"), live=cssVar("--live"), red=cssVar("--red"), amber=cssVar("--amber"), line=cssVar("--line");
+  ctx.font='600 12px '+cssVar("--sans"); ctx.textBaseline="middle";
+  function X(tt){return left+(tt-t0)/win*(w-left-4)}
+  ctx.strokeStyle=line; ctx.lineWidth=1;
+  for(var sx=Math.ceil(t0/1000)*1000;sx<=t1;sx+=1000){var gx=X(sx); if(gx<left) continue; ctx.globalAlpha=(sx%5000===0)?.9:.35; ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,h); ctx.stroke()}
+  ctx.globalAlpha=1;
+  tr.forEach(function(r,i){
+    var top=i*rowH+8, bot=(i+1)*rowH-8, key=r[1];
+    ctx.fillStyle=mut; ctx.fillText(r[0],4,(top+bot)/2);
+    ctx.strokeStyle = key==="out"?amber : key==="sp"?red : live; ctx.lineWidth=2.2; ctx.beginPath();
+    var started=false, prevY=null;
+    state.hist.forEach(function(e){
+      var x=X(e.t); if(x<left) return;
+      var yy=bot-(e[key]?1:0)*(bot-top);
+      if(!started){ctx.moveTo(x,yy); started=true}
+      else if(prevY!==yy){ctx.lineTo(x,prevY); ctx.lineTo(x,yy)}
+      else ctx.lineTo(x,yy);
+      prevY=yy;
+    });
+    ctx.stroke();
+  });
+}
+
+/* ---------- Controls in the bottom bar ---------- */
+var acts=document.getElementById("acts");
+function buildControls(){
+  var t=state.type, bits;
+  if(t==="SEAL"){
+    acts.innerHTML='<button class="pb k-st" data-k="stP"><span class="cap" aria-hidden="true"></span><span><b>Start</b><small>NO</small></span></button>'+
+                   '<button class="pb k-sp" data-k="spP"><span class="cap" aria-hidden="true"></span><span><b>Stop</b><small>NC</small></span></button>';
+    bits=[["Start","st"],["Stop","sp"]];
+  } else {
+    var sw=function(k,n){return '<button class="switch" data-k="'+k+'" aria-pressed="'+state[k]+'"><span class="knob" aria-hidden="true"></span><span><b>'+n+'</b><small>switch</small></span></button>'};
+    acts.innerHTML = t==="NOT" ? sw("a","A") : sw("a","A")+sw("b","B");
+    bits = t==="NOT" ? [["A","a"]] : [["A","a"],["B","b"]];
+  }
+  document.getElementById("pBits").innerHTML=bits.map(function(b){return '<span class="bl"><i data-sig="'+b[1]+'"></i>'+b[0]+'</span>'}).join("");
+}
+acts.addEventListener("click",function(e){
+  var b=e.target.closest(".switch"); if(!b) return;
+  var k=b.dataset.k; state[k]=!state[k]; b.setAttribute("aria-pressed",String(state[k]));
+});
+function press(b,v){ if(!b||!b.classList.contains("pb")) return; state[b.dataset.k]=v; b.classList.toggle("held",v); }
+acts.addEventListener("pointerdown",function(e){var b=e.target.closest(".pb"); if(!b) return; e.preventDefault(); try{b.setPointerCapture(e.pointerId)}catch(_){} press(b,true)});
+["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){acts.addEventListener(ev,function(e){press(e.target.closest(".pb"),false)})});
+acts.addEventListener("keydown",function(e){if(e.key===" "||e.key==="Enter"){var b=e.target.closest(".pb"); if(b){e.preventDefault(); if(!e.repeat) press(b,true)}}});
+acts.addEventListener("keyup",function(e){if(e.key===" "||e.key==="Enter")press(e.target.closest(".pb"),false)});
+acts.addEventListener("contextmenu",function(e){e.preventDefault()});
+
+/* ---------- Switching logic type ---------- */
+function setType(t,init){
+  state.type=t; if(!init) store.set("pl-logic",t);
+  document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.type===t))});
+  state.a=false; state.b=false; state.stP=false; state.spP=false; state.out=false;
+  state.hist=[]; state.t=0; state.lastSample=-1;
+  var seal=t==="SEAL", inf=INFO[t];
+  document.getElementById("lTitle").textContent=inf.title;
+  document.getElementById("lDesc").textContent=inf.desc;
+  document.getElementById("tryBox").innerHTML=inf.tryIt;
+  var nb=document.getElementById("noteBox"); nb.hidden=!inf.note; nb.innerHTML=inf.note||"";
+  document.getElementById("gateWrap").hidden=seal;
+  document.getElementById("fieldWrap").hidden=!seal;
+  buildLadder(); buildGate(); buildField(); buildTable(); buildControls(); cacheEls(); render();
+}
+document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(b) setType(b.dataset.type)});
+setType(state.type,true);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
