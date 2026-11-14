@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v1.5** Added the Logic card
 - **v1.4** Added the Counters card
 - **v1.3** Timers card: v2.1, lists CLICK and DL06
 - **v1.2** Addressing card: v1.1, lists CLICK and DL06
@@ -35,3 +36,7 @@ Called "Timers & Addressing" through v1.7.
 ## Counters (`counters/`)
 
 - **v1.0** First version: up, down and up/down counters on a live rung with a timing diagram, for SLC 500 (CTU, CTD, RES), CompactLogix (CTU, CTD, RES), Siemens S7 (CTU, CTD, CTUD), CLICK (Count Up, Up/Down) and DirectLOGIC DL06 (CNT, UDC)
+
+## Logic (`logic/`)
+
+- **v1.0** First version. Gates: NOT, AND, OR, NAND and NOR with switches, live ladder rung, gate symbol and truth table. Seal-in with a NO Start button and an NC-wired Stop button programmed as a NO instruction, field wiring diagram and input-bit table. Timing diagram for all. Generic tags, not tied to a PLC brand
