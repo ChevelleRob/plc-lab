@@ -173,6 +173,8 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 #memSeg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
 #memSeg button:nth-child(3){border-right:0}
 #memSeg button{padding:9px 2px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:400px){#memSeg button{font-size:14px}}
+@media (max-width:340px){#memSeg button{font-size:13px;letter-spacing:-.01em}}
 #memSeg button.wide{grid-column:1/-1;border-top:1.5px solid var(--line);border-right:0}
 .pwr{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
 .pwr .next:disabled{opacity:.5;cursor:default}
