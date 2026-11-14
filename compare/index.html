@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab: PLC compare practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --wire:#8A939A; --live:#178F4C; --liveglow:rgba(23,143,76,.22);
+  --amber:#B97C00; --red:#C13D2B; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5; --c2:#9A6400; --c2bg:#F6E7C8; --c3:#177A45; --c3bg:#D6EEDF; --c4:#7A3C99; --c4bg:#EBDDF2;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+    --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+  --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+/* Header: a nameplate, like an engraved panel tag */
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand h1 a{color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:5px;padding:4px 0}
+.brand h1 a::before{content:"\2039";opacity:.6;font-weight:600}
+.brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+.plats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:10px}
+.plats button{grid-column:span 2;min-width:0;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 4px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plats button:nth-child(n+4){grid-column:span 3}
+.plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+h3{font-size:17px;margin:20px 0 6px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.seg{display:flex;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-weight:600;cursor:pointer;border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+
+/* Ladder: the one bold element */
+.ladder{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;margin-top:14px;padding:6px 2px}
+.ladder svg{display:block;width:100%;height:auto}
+.ladder .rail{stroke:var(--live);stroke-width:4}
+.ladder .w{stroke:var(--wire);stroke-width:2.5;fill:none;transition:stroke .08s}
+.ladder .w.on{stroke:var(--live);stroke-width:3.5;filter:drop-shadow(0 0 3px var(--liveglow))}
+.ladder .cb{stroke:var(--ink);stroke-width:2.5}
+.ladder .cfill{fill:transparent}
+.ladder .cfill.on{fill:var(--live)}
+.ladder .coil{fill:none;stroke:var(--ink);stroke-width:2.5}
+.ladder .coil.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .box{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder text{fill:var(--ink);font-family:var(--sans);font-size:12px}
+.ladder .addr{font-family:var(--mono);font-size:10.5px;fill:var(--c1)}
+.ladder .tag{font-size:11px;fill:var(--muted)}
+.ladder .big{font-weight:700;font-size:15px}
+.ladder .val{font-family:var(--mono);font-size:12px;font-weight:700}
+.ladder .ind{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .ind.on{fill:var(--live);stroke:var(--live)}
+.ladder .indt{font-size:10px;font-weight:700}
+.ladder .indt.on{fill:#fff}
+.lamp{fill:var(--surface2);stroke:var(--ink);stroke-width:1.5}
+.lamp.on{fill:var(--live);filter:drop-shadow(0 0 6px var(--live))}
+
+/* Controls */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);color:var(--onpanel);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 12px rgba(0,0,0,.25)}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inds{display:flex;align-items:center;gap:14px;min-width:0}
+.pilot{display:flex;align-items:center;gap:8px}
+.pilot b{display:block;font-size:14px}
+.pilot small{display:block;font-family:var(--mono);font-size:11px;opacity:.75}
+.plamp{width:40px;height:40px;border-radius:50%;flex:none;background:#3A4650;box-shadow:inset 0 0 0 3px rgba(255,255,255,.15);transition:background .08s}
+.plamp.on{background:var(--live);box-shadow:0 0 16px var(--live)}
+.bits{display:flex;gap:8px}
+.bl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
+.bl i{width:16px;height:16px;border-radius:50%;background:#3A4650;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+.bl i.on{background:var(--live);box-shadow:0 0 8px var(--live)}
+.acts{display:flex;gap:14px;flex:none}
+.bar .switch,.bar .pb{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .knob{width:44px;height:44px;background:#1A2228}
+.bar .pb .cap{width:44px;height:44px}
+.bar .switch b,.bar .pb b{font-size:13px}
+.bar .switch small,.bar .pb small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.switch{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left}
+.knob{width:46px;height:46px;border-radius:50%;background:var(--panel);position:relative;flex:none;box-shadow:inset 0 0 0 3px var(--wire)}
+.knob::after{content:"";position:absolute;left:50%;top:7px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:var(--onpanel);transform:rotate(-40deg);transform-origin:50% 16px;transition:transform .15s}
+.switch[aria-pressed="true"] .knob::after{transform:rotate(40deg)}
+.switch[aria-pressed="true"] .knob{box-shadow:inset 0 0 0 3px var(--live)}
+.switch b{display:block;font-size:16px}
+.switch small{color:var(--muted);font-size:13px}
+.pb{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;user-select:none;-webkit-user-select:none;touch-action:none}
+.pb .cap{width:46px;height:46px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 4px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb.held .cap{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb b{display:block;font-size:16px}
+.pb small{color:var(--muted);font-size:13px}
+
+.status{width:100%;border-collapse:collapse;margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;font-size:15px}
+.status td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+.status tr:first-child td{border-top:0}
+.status td:first-child{font-family:var(--mono);font-size:13px;color:var(--c1);white-space:nowrap}
+.status td.v{font-family:var(--mono);font-weight:700;white-space:nowrap;width:5.5em}
+.bit{display:inline-block;min-width:2.2em;text-align:center;border-radius:4px;padding:0 4px;background:var(--surface2);color:var(--muted)}
+.bit.on{background:var(--live);color:#fff}
+.status td.m{color:var(--muted);font-size:14px}
+
+.chartbox{margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.chartbox canvas{display:block;width:100%;height:210px}
+.note{margin-top:14px;padding:12px 14px;border-left:4px solid var(--amber);background:var(--surface);border-radius:0 8px 8px 0}
+.note p{margin:4px 0}
+.try{margin-top:12px;padding:12px 14px;border-left:4px solid var(--live);background:var(--surface);border-radius:0 8px 8px 0}
+
+.qtext code,.qexp code,.note code,.try code,p code{font-family:var(--mono);font-size:.9em;color:var(--c1)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* Counters: momentary pushbuttons, one cap color per job */
+.pb .cap,.pb.held .cap{background:var(--cap,var(--red))}
+.pb .cap{box-shadow:0 4px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.held .cap{box-shadow:0 1px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.k-up{--cap:var(--live)} .pb.k-dn{--cap:var(--amber)} .pb.k-rs{--cap:var(--red)} .pb.k-ld{--cap:var(--c1)}
+.bar .acts{gap:10px}
+.bar .inds{gap:10px}
+@media (max-width:400px){ .pilot small{display:none} .bar .pb b{font-size:12px} }
+
+/* Compare: six instruction buttons in a 3 x 2 grid */
+.seg.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg.grid3 button:nth-child(3){border-right:0}
+.seg.grid3 button:nth-child(n+4){border-top:1.5px solid var(--line)}
+.seg.grid3 button{font-family:var(--mono);font-size:16px}
+.ladder .cmpbox{transition:stroke .08s,fill .08s}
+.ladder .cmpbox.on{stroke:var(--live);fill:var(--liveglow)}
+/* Number line */
+.ladder .shade{fill:var(--c3bg)}
+.ladder .axis{stroke:var(--wire);stroke-width:2}
+.ladder .tick{font-family:var(--mono);font-size:12px;fill:var(--muted)}
+.ladder .bmark{font-family:var(--mono);font-size:12px;font-weight:700;fill:var(--c1)}
+.ladder .dot{fill:var(--surface);stroke:var(--ink);stroke-width:2.5}
+.ladder #dot.on .dot{fill:var(--live);stroke:var(--live);filter:drop-shadow(0 0 5px var(--live))}
+.ladder .dotv{font-family:var(--mono);font-size:9px;font-weight:700;fill:var(--ink)}
+.ladder #dot{transition:transform .12s}
+/* Results table */
+.tt td{text-align:center;font-family:var(--mono)}
+.tt tr.th td{font-family:var(--sans);font-weight:600;background:var(--surface2);color:var(--ink);font-size:14px}
+.tt tr.cur td{background:var(--liveglow)}
+.tt tr.cur td:first-child{box-shadow:inset 4px 0 0 var(--live)}
+.bar .cnt{font-family:var(--mono);font-size:18px;line-height:16px;min-width:2ch;text-align:center}
+@media (prefers-reduced-motion: reduce){.ladder #dot{transition:none}}
+</style>
+</head>
+<body class="has-bar">
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Compare practice</span><span class="ver">v1.0</span></div>
+    <div class="plats" role="group" aria-label="PLC platform">
+      <button data-plat="slc">SLC 500</button>
+      <button data-plat="clx">CompactLogix</button>
+      <button data-plat="s7">Siemens S7</button>
+      <button data-plat="click">CLICK</button>
+      <button data-plat="dl06">DL06</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="lbl">Compare instruction</div>
+    <div class="seg grid3" id="cmpSeg" role="group" aria-label="Compare instruction"></div>
+    <div class="lbl">Compare the count to</div>
+    <div class="seg" id="bSeg" role="group" aria-label="Value to compare with">
+      <button data-b="3">3</button><button data-b="5" aria-pressed="true">5</button><button data-b="8">8</button>
+    </div>
+    <h2 id="cTitle"></h2>
+    <p id="cDesc"></p>
+
+    <div class="lbl">Number line: the lamp is on in the shaded part</div>
+    <div class="ladder" id="nline" aria-label="Number line"></div>
+
+    <div class="lbl">Program (ladder)</div>
+    <div class="ladder" id="ladder" aria-label="Live ladder logic"></div>
+
+    <div class="lbl">Results near the compare value</div>
+    <table class="status tt" id="tbl"></table>
+
+    <div class="lbl">Timing diagram (last 20 seconds)</div>
+    <div class="chartbox"><canvas id="chart" aria-label="Timing diagram"></canvas></div>
+
+    <div class="try" id="tryBox"></div>
+    <div class="note" id="platNote"></div>
+  </section>
+</main>
+
+<div class="bar" id="ctlBar">
+  <div class="in">
+    <div class="inds">
+      <div class="pilot"><span class="plamp" id="pLamp" aria-hidden="true"></span><span><b>Lamp</b><small id="pLampA"></small></span></div>
+      <div class="bits"><span class="bl"><b class="cnt" id="pCount">0</b>Count</span></div>
+    </div>
+    <div class="acts" id="acts"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var store = {
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var PLATS=["slc","clx","s7","click","dl06"], OPS=["GRT","GEQ","LES","LEQ","EQU","NEQ"];
+var state = {
+  plat: store.get("rl-plat") || "slc",
+  op: store.get("pl-cmp") || "GEQ", b: 5, pre: 10, acc: 0,
+  inp:{up:false,dn:false,rs:false}, prev:{up:false,dn:false,rs:false},
+  hist:[], t:0, lastSample:-1
+};
+if(PLATS.indexOf(state.plat)<0) state.plat="slc";
+if(OPS.indexOf(state.op)<0) state.op="GEQ";
+
+var NAME = {GRT:"Greater than",GEQ:"Greater than or equal",LES:"Less than",LEQ:"Less than or equal",EQU:"Equal",NEQ:"Not equal"};
+var ABSUB = {GRT:"Greater Than (A>B)",GEQ:"Grtr Than or Eql (A>=B)",LES:"Less Than (A<B)",LEQ:"Less Than or Eql (A<=B)",EQU:"Equal",NEQ:"Not Equal"};
+var MATH = {GRT:">",GEQ:"≥",LES:"<",LEQ:"≤",EQU:"=",NEQ:"≠"};
+var TIA = {GRT:">",GEQ:">=",LES:"<",LEQ:"<=",EQU:"==",NEQ:"<>"};
+function test(op,a,b){ return op==="GRT"?a>b : op==="GEQ"?a>=b : op==="LES"?a<b : op==="LEQ"?a<=b : op==="EQU"?a===b : a!==b }
+
+/* ---------- Platform data ---------- */
+var P = {
+  slc:{ name:"SLC 500", style:"ab", ctr:"C5:0", srcA:"C5:0.ACC",
+    addr:{up:"I:1/0",dn:"I:1/1",rs:"I:1/2",out:"O:2/0"}, min:-32768, max:32767,
+    label:function(op){return op}, constFmt:function(n){return String(n)},
+    note:"<p><b>SLC 500:</b> compare instructions are <i>input</i> instructions. They sit on the left of the rung like a contact and are either true or false. <b>Source A</b> is usually the value that changes, here the counter’s accumulator <code>C5:0.ACC</code>. <b>Source B</b> is a constant or another address. Values are compared as 16-bit integers.</p><p>A GEQ on <code>C5:0.ACC</code> with Source B equal to the preset does the same job as the DN bit.</p><p>Two more compares: <b>LIM</b> (limit test) is true when a value is between two limits, and <b>MEQ</b> compares only selected bits.</p>" },
+  clx:{ name:"CompactLogix", style:"ab", ctr:"Counter1", srcA:"Counter1.ACC",
+    addr:{up:"Count_Up_PB",dn:"Count_Dn_PB",rs:"Reset_PB",out:"Lamp"}, min:-2147483648, max:2147483647,
+    label:function(op){return op}, constFmt:function(n){return String(n)},
+    note:"<p><b>CompactLogix:</b> the same GRT, GEQ, LES, LEQ, EQU and NEQ boxes as the SLC 500, working on DINT and REAL tags. Logix also has <b>CMP</b>, one box holding a whole expression, like <code>Counter1.ACC &gt;= 5 AND Counter1.ACC &lt; 8</code>, and <b>LIM</b> for a range.</p><p><b>Careful with REALs:</b> an EQU on floating-point values is rarely true, because 4.9999 is not 5. Use LIM or GEQ/LEQ instead.</p>" },
+  s7:{ name:"Siemens S7", style:"s7", ctr:"“IEC_Counter_0_DB”", srcA:"“IEC_Counter_0_DB”.CV",
+    addr:{up:"%I0.0",dn:"%I0.1",rs:"%I0.2",out:"%Q0.0"}, min:-32768, max:32767,
+    label:function(op){return TIA[op]}, constFmt:function(n){return String(n)},
+    note:"<p><b>S7-1200/1500 (TIA Portal):</b> comparisons are <b>compare contacts</b>. The operator (<code>==</code>, <code>&lt;&gt;</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>) sits inside the contact, the data type (Int, DInt, Real…) underneath, and the two operands above and below. Both operands need the same data type.</p><p>For a range there are <b>IN_RANGE</b> and <b>OUT_RANGE</b> boxes. With Real values, avoid <code>==</code>: use a range instead.</p>" },
+  click:{ name:"CLICK", style:"ad", ctr:"CT1", srcA:"CTD1",
+    addr:{up:"X001",dn:"X002",rs:"X003",out:"Y001"}, min:-2147483648, max:2147483647,
+    label:function(op){return MATH[op]}, constFmt:function(n){return String(n)},
+    note:"<p><b>CLICK:</b> comparisons are <b>compare contacts</b>. Each one compares two values, such as a register and a constant, and passes power when the comparison is true. You can put them in series and in parallel like any other contact.</p><p>Here the counter’s current value <code>CTD1</code> is compared with a constant. CTD1 is a signed 32-bit value, so it can also be compared below zero.</p>" },
+  dl06:{ name:"DL06", style:"ad", ctr:"CT0", srcA:"CTA0",
+    addr:{up:"X0",dn:"X1",rs:"X2",out:"Y0"}, min:0, max:99999999,
+    /* DL06 has only =, ≠, ≥ and < contacts: > and ≤ use the next whole number up */
+    label:function(op){return MATH[op]}, constFmt:function(n){return "K"+n},
+    dlMap:function(op,b){ return op==="GRT"?["GEQ",b+1] : op==="LEQ"?["LES",b+1] : [op,b] },
+    note:"<p><b>DL06 (DirectSOFT):</b> compare contacts come in four kinds only: <code>=</code>, <code>≠</code>, <code>≥</code> and <code>&lt;</code>. There is no greater-than or less-than-or-equal contact.</p><p>For whole numbers that is not a problem: <b>greater than 5</b> is the same as <b>≥ 6</b>, and <b>less than or equal to 5</b> is the same as <b>&lt; 6</b>. So the <code>&gt;</code> and <code>≤</code> buttons build the rung with the next value up. Constants are written as <code>K</code> values, in BCD.</p><p><code>CTA0</code> is the UDC’s current count, stored in <code>V1000</code>.</p>" }
+};
+var TRY = {
+  GRT:"Count up from 0. The lamp stays off at B itself and turns on one count later.",
+  GEQ:"Count up from 0. The lamp turns on the moment the count reaches B.",
+  LES:"The lamp is on from the start, because 0 is less than B. It turns off when the count reaches B.",
+  LEQ:"The lamp is on from the start and stays on at B. It turns off one count past B.",
+  EQU:"The lamp is on at exactly one count. Step up and down across B and watch it blink on and off.",
+  NEQ:"The opposite of EQU: the lamp is on everywhere except at B."
+};
+
+/* ---------- Counter: one scan ---------- */
+function scan(){
+  var p=P[state.plat], I=state.inp, pv=state.prev, upE=I.up&&!pv.up, dnE=I.dn&&!pv.dn;
+  if(I.rs) state.acc=0;
+  else { if(upE && state.acc<p.max) state.acc++; if(dnE && state.acc>p.min) state.acc--; }
+  pv.up=I.up; pv.dn=I.dn; pv.rs=I.rs;
+}
+function result(){ return test(state.op,state.acc,state.b) }
+function sig(){
+  var I=state.inp, r=result();
+  return {one:true, up:I.up&&!I.rs, dn:I.dn&&!I.rs, rs:I.rs, cmp:r, out:r};
+}
+
+/* ---------- Drawing helpers ---------- */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+var L=10, R=350;
+function contact(x,y,s,addr,tag){
+  var long=String(addr).length>10, ax=long?L+4:x+8, an=long?"start":"middle";
+  return '<text class="addr" x="'+ax+'" y="'+(y-18)+'" text-anchor="'+an+'">'+esc(addr)+'</text>'+
+    (tag?'<text class="tag" x="'+(x+8)+'" y="'+(y+27)+'" text-anchor="middle">'+esc(tag)+'</text>':'')+
+    '<rect class="cfill" data-sig="'+s+'" x="'+(x+2)+'" y="'+(y-10)+'" width="12" height="20" rx="1"/>'+
+    '<line class="cb" x1="'+x+'" y1="'+(y-12)+'" x2="'+x+'" y2="'+(y+12)+'"/>'+
+    '<line class="cb" x1="'+(x+16)+'" y1="'+(y-12)+'" x2="'+(x+16)+'" y2="'+(y+12)+'"/>';
+}
+function coil(x,y,s,addr,tag,inner){
+  return '<text class="addr" x="'+(x+14)+'" y="'+(y-18)+'" text-anchor="middle">'+esc(addr)+'</text>'+
+    (tag?'<text class="tag" x="'+(x+14)+'" y="'+(y+27)+'" text-anchor="middle">'+esc(tag)+'</text>':'')+
+    '<path class="coil" data-sig="'+s+'" d="M'+(x+6)+' '+(y-12)+' Q'+(x-3)+' '+y+' '+(x+6)+' '+(y+12)+' M'+(x+22)+' '+(y-12)+' Q'+(x+31)+' '+y+' '+(x+22)+' '+(y+12)+'"/>'+
+    (inner?'<text x="'+(x+14)+'" y="'+(y+4)+'" text-anchor="middle" style="font-size:9px;font-weight:700">'+inner+'</text>':'');
+}
+function wire(s,x1,y1,x2,y2){return '<line class="w" data-sig="'+s+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'}
+function tagFor(k){return {up:"Up button",dn:"Down button",rs:"Reset button",out:"Lamp"}[k]}
+
+/* ---------- Ladder: the up/down counter, then the compare rung ---------- */
+function buildLadder(){
+  var p=P[state.plat], o="", y, H, op=state.op, b=state.b;
+  if(p.style==="ab"){
+    var y0=10;
+    [["CTU","up","CU","Count Up"],["CTD","dn","CD","Count Down"]].forEach(function(bx){
+      var yl=y0+32;
+      o+=wire("one",L,yl,40,yl)+contact(40,yl,bx[1],p.addr[bx[1]],tagFor(bx[1]))+wire(bx[1],56,yl,128,yl)+
+        '<rect class="box" x="128" y="'+(y0+8)+'" width="160" height="74" rx="3"/>'+
+        '<text class="big" x="138" y="'+(y0+27)+'">'+bx[0]+'</text><text x="138" y="'+(y0+41)+'" class="tag">'+bx[3]+'</text>'+
+        '<text x="138" y="'+(y0+58)+'">Counter</text><text class="val" x="280" y="'+(y0+58)+'" text-anchor="end">'+esc(p.ctr)+'</text>'+
+        '<text x="138" y="'+(y0+73)+'">Accum</text><text class="val accv" x="280" y="'+(y0+73)+'" text-anchor="end"></text>'+
+        wire(bx[1],288,yl,R,yl);
+      y0+=94;
+    });
+    y=y0+30;
+    o+=wire("one",L,y,40,y)+contact(40,y,"rs",p.addr.rs,tagFor("rs"))+wire("rs",56,y,296,y)+coil(296,y,"rs",p.ctr,"",'RES')+wire("rs",324,y,R,y);
+    /* Compare box on the left of the rung, lamp on the right */
+    var c0=y+44, yc=c0+22;
+    o+='<text class="tag" x="180" y="'+(c0-8)+'" text-anchor="middle">Compare rung</text>';
+    o+=wire("one",L,yc,96,yc)+'<rect class="box cmpbox" data-sig="cmp" x="96" y="'+c0+'" width="168" height="92" rx="3"/>'+
+      '<text class="big" x="106" y="'+(c0+20)+'">'+op+'</text><text x="106" y="'+(c0+34)+'" class="tag">'+ABSUB[op]+'</text>'+
+      '<text x="106" y="'+(c0+52)+'">Source A</text><text class="val" x="256" y="'+(c0+52)+'" text-anchor="end">'+esc(p.srcA)+'</text>'+
+      '<text class="val accv" x="256" y="'+(c0+66)+'" text-anchor="end"></text>'+
+      '<text x="106" y="'+(c0+84)+'">Source B</text><text class="val" x="256" y="'+(c0+84)+'" text-anchor="end">'+b+'</text>'+
+      wire("cmp",264,yc,296,yc)+coil(296,yc,"out",p.addr.out,tagFor("out"))+wire("cmp",324,yc,R,yc);
+    H=c0+108;
+  } else {
+    /* One counter box with Up, Down and Reset pins */
+    var s7=p.style==="s7", bx0=128, bx1=s7?268:300, py=72, PIN=44, keys=["up","dn","rs"];
+    var pinName = s7 ? {up:"CU",dn:"CD",rs:"R"} : {up:"Up",dn:"Down",rs:"Reset"};
+    var bottom=py+PIN*2+30;
+    o+='<rect class="box" x="'+bx0+'" y="22" width="'+(bx1-bx0)+'" height="'+(bottom-22)+'" rx="3"/>';
+    if(s7){
+      o+='<text class="addr" x="'+((bx0+bx1)/2)+'" y="16" text-anchor="middle">'+esc(p.ctr)+'</text>'+
+        '<text class="big" x="'+((bx0+bx1)/2)+'" y="40" text-anchor="middle">CTUD</text><text class="tag" x="'+((bx0+bx1)/2)+'" y="54" text-anchor="middle">Int</text>'+
+        '<text x="'+(bx1-6)+'" y="'+(py+PIN*2+4)+'" class="tag" text-anchor="end">CV</text><text class="val accv" x="'+(bx1+8)+'" y="'+(py+PIN*2+4)+'"></text>';
+    } else {
+      var t1 = state.plat==="dl06" ? ["UDC","Up/down counter"] : ["Counter","Up and Down"];
+      o+='<text class="big" x="'+(bx0+10)+'" y="42">'+t1[0]+'</text><text x="'+(bx0+10)+'" y="56" class="tag">'+t1[1]+'</text>'+
+        '<text x="206" y="'+py+'">Counter</text><text class="val" x="'+(bx1-8)+'" y="'+py+'" text-anchor="end">'+p.ctr+'</text>'+
+        '<text x="206" y="'+(py+18)+'">'+p.srcA+'</text><text class="val accv" x="'+(bx1-8)+'" y="'+(py+18)+'" text-anchor="end"></text>';
+    }
+    keys.forEach(function(k,i){
+      var yy=py+PIN*i;
+      o+=wire("one",L,yy,40,yy)+contact(40,yy,k,p.addr[k],"")+wire(k,56,yy,bx0,yy)+'<text x="'+(bx0+6)+'" y="'+(yy+4)+'" class="tag">'+pinName[k]+'</text>';
+    });
+    /* Compare contact: operand A above, operator inside, operand B below */
+    var yc=bottom+64, cx=110, opA=op, bB=b;
+    if(p.dlMap){ var m=p.dlMap(op,b); opA=m[0]; bB=m[1]; }
+    var sym = s7 ? TIA[opA] : MATH[opA];
+    o+='<text class="tag" x="180" y="'+(yc-44)+'" text-anchor="middle">Compare rung</text>';
+    o+=wire("one",L,yc,cx,yc)+
+      '<text class="addr" x="'+(cx+30)+'" y="'+(yc-24)+'" text-anchor="middle">'+esc(p.srcA)+'</text>'+
+      '<rect class="box cmpbox" data-sig="cmp" x="'+cx+'" y="'+(yc-16)+'" width="60" height="32" rx="3"/>'+
+      '<text class="big" x="'+(cx+30)+'" y="'+(yc+(s7?1:6))+'" text-anchor="middle">'+esc(sym)+'</text>'+
+      (s7?'<text class="tag" x="'+(cx+30)+'" y="'+(yc+12)+'" text-anchor="middle">Int</text>':'')+
+      '<text class="val" x="'+(cx+30)+'" y="'+(yc+32)+'" text-anchor="middle">'+esc(p.constFmt(bB))+'</text>'+
+      wire("cmp",cx+60,yc,296,yc)+coil(296,yc,"out",p.addr.out,"Lamp")+wire("cmp",324,yc,R,yc);
+    if(p.dlMap && (op==="GRT"||op==="LEQ")) o+='<text class="tag" x="'+(cx+30)+'" y="'+(yc+50)+'" text-anchor="middle">No '+MATH[op]+' contact, so this uses '+MATH[opA]+' K'+bB+'</text>';
+    H=yc+(p.dlMap && (op==="GRT"||op==="LEQ") ? 62 : 46);
+  }
+  o='<line class="rail" x1="'+L+'" y1="8" x2="'+L+'" y2="'+(H-8)+'"/><line class="rail" x1="'+R+'" y1="8" x2="'+R+'" y2="'+(H-8)+'"/>'+o;
+  document.getElementById("ladder").innerHTML='<svg viewBox="0 0 360 '+H+'" role="img" aria-label="Up/down counter and compare rung">'+o+'</svg>';
+}
+
+/* ---------- Number line ---------- */
+var NL={lo:0,hi:12,x0:24,x1:336};
+function nx(v){return NL.x0+(v-NL.lo)/(NL.hi-NL.lo)*(NL.x1-NL.x0)}
+function buildNumberLine(){
+  var o="", y=44, b=state.b, op=state.op, step=(NL.x1-NL.x0)/(NL.hi-NL.lo);
+  for(var v=NL.lo; v<=NL.hi; v++){
+    if(test(op,v,b)) o+='<rect class="shade" x="'+(nx(v)-step/2+1)+'" y="'+(y-14)+'" width="'+(step-2)+'" height="28" rx="3"/>';
+  }
+  o+='<line class="axis" x1="'+(NL.x0-10)+'" y1="'+y+'" x2="'+(NL.x1+10)+'" y2="'+y+'"/>';
+  for(v=NL.lo; v<=NL.hi; v++){
+    o+='<line class="axis" x1="'+nx(v)+'" y1="'+(y-5)+'" x2="'+nx(v)+'" y2="'+(y+5)+'"/>'+
+       '<text class="tick'+(v===b?' bmark':'')+'" x="'+nx(v)+'" y="'+(y+24)+'" text-anchor="middle">'+v+'</text>';
+  }
+  o+='<text class="bmark" x="'+nx(b)+'" y="'+(y-20)+'" text-anchor="middle">B = '+b+'</text>';
+  o+='<g id="dot"><circle class="dot" r="9" cx="0" cy="'+y+'"/><text class="dotv" x="0" y="'+(y+4)+'" text-anchor="middle"></text></g>';
+  document.getElementById("nline").innerHTML='<svg viewBox="0 0 360 80" role="img" aria-label="Number line from 0 to 12">'+o+'</svg>';
+}
+
+/* ---------- Results table ---------- */
+function buildTable(){
+  var b=state.b, op=state.op, h='<tr class="th"><td>Count</td><td>'+esc(P[state.plat].srcA)+' '+MATH[op]+' '+b+'</td><td>Lamp</td></tr>';
+  for(var v=Math.max(b-2,0); v<=b+2; v++){
+    var r=test(op,v,b);
+    h+='<tr data-row="'+v+'"><td>'+v+'</td><td>'+(r?"true":"false")+'</td><td><span class="bit'+(r?' on':'')+'">'+(r?1:0)+'</span></td></tr>';
+  }
+  document.getElementById("tbl").innerHTML=h;
+}
+
+/* ---------- Render ---------- */
+var sigEls=[], accEls=[], rowEls=[];
+function cacheEls(){
+  sigEls=[].slice.call(document.querySelectorAll("[data-sig]"));
+  accEls=[].slice.call(document.querySelectorAll(".accv"));
+  rowEls=[].slice.call(document.querySelectorAll("#tbl tr[data-row]"));
+}
+function render(){
+  var s=sig(), a=String(state.acc);
+  sigEls.forEach(function(e){ e.classList.toggle("on", !!s[e.getAttribute("data-sig")]) });
+  accEls.forEach(function(e){ if(e.textContent!==a) e.textContent=a });
+  document.getElementById("pLamp").classList.toggle("on",s.out);
+  var pc=document.getElementById("pCount"); if(pc.textContent!==a) pc.textContent=a;
+  rowEls.forEach(function(r){ r.classList.toggle("cur", r.getAttribute("data-row")===a) });
+  var dot=document.getElementById("dot");
+  if(dot){
+    var v=Math.max(NL.lo-0.6,Math.min(NL.hi+0.6,state.acc)), tr="translate("+nx(v)+",0)";
+    if(dot.getAttribute("transform")!==tr) dot.setAttribute("transform",tr);
+    dot.classList.toggle("on",s.out);
+    var dv=dot.querySelector(".dotv"); if(dv.textContent!==a) dv.textContent = state.acc>NL.hi||state.acc<NL.lo ? a : "";
+  }
+  drawChart();
+}
+var last=null;
+function loop(ts){
+  if(last===null) last=ts;
+  var dt=Math.min(ts-last,100); last=ts;
+  scan(); state.t+=dt;
+  if(state.t-state.lastSample>=40){
+    var s=sig();
+    state.hist.push({t:state.t,up:s.up,dn:s.dn,rs:s.rs,out:s.out,acc:state.acc});
+    state.lastSample=state.t;
+    while(state.hist.length && state.hist[0].t < state.t-21000) state.hist.shift();
+  }
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- Timing chart ---------- */
+var cv=document.getElementById("chart"), ctx=cv.getContext("2d");
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function drawChart(){
+  if(!ctx) return;
+  var dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  if(!w) return;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  var tr=[["Up","up"],["Down","dn"],["Reset","rs"],["Lamp","out"],["Count","acc"]];
+  var rowH=h/(tr.length+1), left=46, win=20000, t1=state.t, t0=t1-win;
+  var mut=cssVar("--muted"), live=cssVar("--live"), amber=cssVar("--amber"), red=cssVar("--red"), line=cssVar("--line"), c1=cssVar("--c1");
+  ctx.font='600 12px '+cssVar("--sans"); ctx.textBaseline="middle";
+  function X(tt){return left+(tt-t0)/win*(w-left-4)}
+  ctx.strokeStyle=line; ctx.lineWidth=1;
+  for(var sx=Math.ceil(t0/1000)*1000;sx<=t1;sx+=1000){var gx=X(sx); if(gx<left) continue; ctx.globalAlpha=(sx%5000===0)?.9:.35; ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,h); ctx.stroke()}
+  ctx.globalAlpha=1;
+  var lo=Math.min(0,state.b-1), hi=Math.max(state.b+3,8);
+  state.hist.forEach(function(e){ if(e.acc<lo) lo=e.acc; if(e.acc>hi) hi=e.acc; });
+  tr.forEach(function(r,i){
+    var key=r[1], isAcc=key==="acc", top=i*rowH+6, bot=(isAcc?h:(i+1)*rowH)-6;
+    ctx.fillStyle=mut; ctx.fillText(r[0],4,(top+bot)/2);
+    function Y(e){ return isAcc ? bot-(e.acc-lo)/(hi-lo)*(bot-top) : bot-(e[key]?1:0)*(bot-top) }
+    if(isAcc){
+      var yy=bot-(state.b-lo)/(hi-lo)*(bot-top);
+      ctx.setLineDash([4,4]); ctx.strokeStyle=c1; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(left,yy); ctx.lineTo(w,yy); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle=c1; ctx.font='600 10px '+cssVar("--sans"); ctx.fillText("B = "+state.b,left+2,yy-7); ctx.font='600 12px '+cssVar("--sans");
+    }
+    ctx.strokeStyle = isAcc?amber : key==="rs"?red : key==="dn"?amber : key==="out"?c1 : live; ctx.lineWidth=2.2; ctx.beginPath();
+    var started=false, prevY=null;
+    state.hist.forEach(function(e){
+      var x=X(e.t); if(x<left) return;
+      var yv=Y(e);
+      if(!started){ctx.moveTo(x,yv); started=true}
+      else if(prevY!==yv){ctx.lineTo(x,prevY); ctx.lineTo(x,yv)}
+      else ctx.lineTo(x,yv);
+      prevY=yv;
+    });
+    ctx.stroke();
+  });
+}
+
+/* ---------- Setup ---------- */
+function rebuild(){
+  var p=P[state.plat], op=state.op;
+  document.getElementById("cmpSeg").innerHTML=OPS.map(function(o){return '<button data-op="'+o+'" aria-pressed="'+(o===op)+'" title="'+NAME[o]+'">'+esc(p.label(o))+'</button>'}).join("");
+  document.querySelectorAll("#bSeg button").forEach(function(x){x.setAttribute("aria-pressed",String(+x.dataset.b===state.b))});
+  document.getElementById("cTitle").textContent=(p.style==="ab"?op+": ":p.label(op)+"  ")+NAME[op];
+  document.getElementById("cDesc").innerHTML="The lamp is on while <b>Count "+MATH[op]+" "+state.b+"</b> is true. Use Up and Down to move the count and watch the dot cross into and out of the shaded part.";
+  document.getElementById("tryBox").innerHTML="<b>Try this:</b> "+TRY[op]+" Then pick 3 or 8 and see the shaded part move with B.";
+  document.getElementById("platNote").innerHTML=p.note;
+  document.getElementById("pLampA").textContent=p.addr.out;
+  buildLadder(); buildNumberLine(); buildTable(); cacheEls(); render();
+}
+function buildControls(){
+  var p=P[state.plat];
+  document.getElementById("acts").innerHTML=["up","dn","rs"].map(function(k){
+    return '<button class="pb k-'+k+'" data-k="'+k+'"><span class="cap" aria-hidden="true"></span><span><b>'+{up:"Up",dn:"Down",rs:"Reset"}[k]+'</b><small>'+esc(p.addr[k])+'</small></span></button>';
+  }).join("");
+}
+document.getElementById("cmpSeg").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.op=b.dataset.op; store.set("pl-cmp",state.op); rebuild();});
+document.getElementById("bSeg").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.b=+b.dataset.b; rebuild();});
+
+var acts=document.getElementById("acts");
+function press(b,v){ if(!b) return; state.inp[b.dataset.k]=v; b.classList.toggle("held",v); }
+acts.addEventListener("pointerdown",function(e){var b=e.target.closest(".pb"); if(!b) return; e.preventDefault(); try{b.setPointerCapture(e.pointerId)}catch(_){} press(b,true)});
+["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){acts.addEventListener(ev,function(e){press(e.target.closest(".pb"),false)})});
+acts.addEventListener("keydown",function(e){if(e.key===" "||e.key==="Enter"){var b=e.target.closest(".pb"); if(b){e.preventDefault(); if(!e.repeat) press(b,true)}}});
+acts.addEventListener("keyup",function(e){if(e.key===" "||e.key==="Enter")press(e.target.closest(".pb"),false)});
+acts.addEventListener("contextmenu",function(e){e.preventDefault()});
+
+function setPlat(p,init){
+  state.plat=p; if(!init) store.set("rl-plat",p);
+  document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plat===p))});
+  state.acc=0; ["up","dn","rs"].forEach(function(k){state.inp[k]=false; state.prev[k]=false});
+  state.hist=[]; state.t=0; state.lastSample=-1;
+  buildControls(); rebuild();
+}
+document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(b) setPlat(b.dataset.plat)});
+setPlat(state.plat,true);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

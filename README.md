@@ -15,6 +15,7 @@ developed and will be added soon.
 | Timers | [`timers/`](timers/) | On-delay, off-delay and retentive timers on a live rung with a timing diagram, for all five PLCs |
 | Counters | [`counters/`](counters/) | Up, down and up/down counters on a live rung with momentary pushbuttons and a timing diagram, for all five PLCs |
 | Logic | [`logic/`](logic/) | NOT, AND, OR, NAND and NOR as ladder, gate symbol and truth table. Memory: hardwired relay seal-in, seal-in, latch/unlatch, and latch/unlatch with a first-scan reset, with an NC-wired Stop button. Generic tags |
+| Compare | [`compare/`](compare/) | Greater than, less than, equal and not equal: an up/down count compared with 3, 5 or 8, on a live rung and a number line, for all five PLCs |
 
 ## Who it's for
 

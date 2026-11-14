@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v1.7** Added the Compare card
 - **v1.6** Logic card: v1.4
 - **v1.5** Added the Logic card
 - **v1.4** Added the Counters card
@@ -45,3 +46,7 @@ Called "Timers & Addressing" through v1.7.
 - **v1.2** Memory types reordered: Relay seal-in, Seal-in, Latch/Unlatch. Latch note covers first-scan unlatch rungs, with the first-pass bit for each PLC. Power loss now takes the rails, wires, contacts and lamp dark for 1.5 s
 - **v1.1** Seal-in button renamed Memory, with a selector for Seal-in, Latch/Unlatch and Relay seal-in. Seal-in rung reordered: Stop first, then Start with the seal-in contact, then Output. New Latch/Unlatch rungs (Stop as an NC instruction) and a hardwired relay seal-in circuit with no PLC. Simulate power loss button
 - **v1.0** First version. Gates: NOT, AND, OR, NAND and NOR with switches, live ladder rung, gate symbol and truth table. Seal-in with a NO Start button and an NC-wired Stop button programmed as a NO instruction, field wiring diagram and input-bit table. Timing diagram for all. Generic tags, not tied to a PLC brand
+
+## Compare (`compare/`)
+
+- **v1.0** First version: GRT, GEQ, LES, LEQ, EQU and NEQ (and each PLC's symbols) comparing an up/down counter's count with 3, 5 or 8. Live ladder with the counter and the compare rung, number line with the true range shaded, results table and timing diagram. SLC 500 and CompactLogix compare boxes; S7, CLICK and DL06 compare contacts. DL06 builds > and ≤ from ≥ and < with the next value up
