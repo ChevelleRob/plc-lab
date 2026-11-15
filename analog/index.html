@@ -213,13 +213,18 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .allT tr.cur td:first-child{box-shadow:inset 4px 0 0 var(--live)}
 .cmpT td{font-size:14px}
 #pgHart .chartbox canvas{height:200px}
+#ctlBar .in.sl{display:block}
+#ctlBar label{display:block;font-size:14px;color:var(--onpanel);margin-bottom:2px}
+#ctlBar label b{font-family:var(--mono)}
+#ctlBar .rng{accent-color:var(--live);margin:6px 0 2px;height:28px}
+body.has-bar .wrap{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 @media (prefers-reduced-motion: reduce){.ladder .flow{animation:none;stroke-dasharray:none}.ladder .imp{animation:none!important}}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.1</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.2</span></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -249,8 +254,6 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
       <div class="lbl">Wiring</div>
       <div class="seg" id="wireSeg" role="group" aria-label="Wiring"></div>
       <div class="ladder" id="wdiag" aria-label="Wiring diagram"></div>
-      <label class="lbl" for="pctRange">Process: <b id="pctVal"></b></label>
-      <input type="range" class="rng" id="pctRange" min="0" max="100" step="1" value="50">
       <div class="lbl">0–10 V or 4–20 mA?</div>
       <table class="status tt cmpT" id="vsTbl"></table>
     </div>
@@ -264,8 +267,6 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
         </div>
       </div>
       <div class="ladder" id="scene" aria-label="Signal path"></div>
-      <label class="lbl" for="ioRange" id="ioLbl"></label>
-      <input type="range" class="rng" id="ioRange" min="0" max="120" step="0.5" value="60">
       <div class="brk"><button class="tgl" id="brkBtn" aria-pressed="false">Cut the wire</button></div>
       <div class="chain" id="chain"></div>
       <p class="result" id="fault" aria-live="polite" hidden></p>
@@ -289,6 +290,15 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
     <div class="note" id="noteBox"></div>
   </section>
 </main>
+
+<div class="bar" id="ctlBar">
+  <div class="in sl">
+    <div id="pctBox"><label for="pctRange">Process: <b id="pctVal"></b></label>
+      <input type="range" class="rng" id="pctRange" min="0" max="100" step="1" value="50"></div>
+    <div id="ioBox"><label for="ioRange" id="ioLbl"></label>
+      <input type="range" class="rng" id="ioRange" min="0" max="120" step="0.5" value="60"></div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -386,7 +396,7 @@ function buildInScene(s,raw){
        '<rect class="liquid" x="16" y="'+(bot-h)+'" width="74" height="'+h+'" rx="4"/>'+
        txt(53,top+16,f1(state.level)+" in","pv","middle")+
        '<rect class="xmtr" x="96" y="'+(yT-14)+'" width="40" height="'+(yB-yT+28)+'" rx="5"/>'+txt(116,(yT+yB)/2+4,"LT","plbl","middle")+
-       txt(116,yB+30,"transmitter","tag","middle");
+       txt(130,yB+30,"transmitter","tag","middle");
   } else {
     o+='<rect class="psu" x="14" y="'+(yT-28)+'" width="122" height="'+(yB-yT+56)+'" rx="6"/>'+
        txt(75,yT-10,V?"Bench power supply":"Loop calibrator","plbl","middle")+
@@ -544,9 +554,9 @@ function buildWiring(){
   var mod=function(t1,t2,name){ return '<rect class="mod" x="262" y="20" width="90" height="170" rx="6"/>'+txt(307,36,name,"plbl","middle")+term(262,96)+term(262,150)+txt(270,90,t1,"tl")+txt(270,166,t2,"tl") };
   var xm=function(y1,y2,lbls){ var o2='<rect class="xmtr" x="128" y="'+y1+'" width="64" height="'+(y2-y1)+'" rx="6"/>'+txt(160,y1-6,"Transmitter","tag","middle"); lbls.forEach(function(l){o2+=term(l[0],l[1])+txt(l[0]+(l[0]<160?6:-6),l[1]+4,l[2],"tl",l[0]<160?"start":"end")}); return o2 };
   if(w==="v"){
-    o+=psu("24 VDC")+mod("V0+","COM","Voltage in")+xm(54,170,[[128,70,"+24"],[128,150,"0V"],[192,96,"OUT"]]);
-    o+=line(78,46,110,46)+line(110,46,110,70)+line(110,70,128,70)+line(78,166,110,166)+line(110,166,110,150)+line(110,150,128,150)+line(110,166,240,166)+line(240,166,240,150)+line(240,150,262,150)+line(192,96,262,96);
-    o+=line(222,150,222,166)+meter(222,123,V.toFixed(2),"V");
+    o+=psu("24 VDC")+mod("V0+","COM","Voltage in")+xm(38,146,[[128,58,"+24"],[128,132,"0V"],[192,96,"OUT"]]);
+    o+=line(78,46,110,46)+line(110,46,110,58)+line(110,58,128,58)+line(78,166,110,166)+line(110,166,110,132)+line(110,132,128,132)+line(110,166,252,166)+line(252,166,252,150)+line(252,150,262,150)+line(192,96,262,96);
+    o+=line(222,96,222,104)+line(222,158,222,166)+meter(222,131,V.toFixed(2),"V");
     o+=txt(180,214,"3 wires: power, common, signal. The PLC measures the voltage.","tag","middle");
   } else if(w==="mA2"){
     o+=psu("24 VDC")+mod("I0+","COM","Current in")+xm(80,150,[[128,96,"+"],[192,96,"−"]]);
@@ -653,6 +663,9 @@ function render(){
   document.getElementById("pgIO").hidden = !(pg==="in"||pg==="out");
   document.getElementById("pgHart").hidden = pg!=="hart";
   if(pg!=="hart") hartRun=false;
+  /* the slider lives in the fixed bar: process % on Wiring, level/supply/speed on Input and Output, none on HART */
+  var bar=document.getElementById("ctlBar"); bar.hidden = pg==="hart"; document.body.classList.toggle("has-bar", pg!=="hart");
+  document.getElementById("pctBox").hidden = pg!=="sig"; document.getElementById("ioBox").hidden = !(pg==="in"||pg==="out");
   var t=TXT[pg];
   document.getElementById("title").textContent=t.title;
   document.getElementById("desc").textContent=t.desc;
