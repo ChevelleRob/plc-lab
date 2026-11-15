@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab: analog I/O, scaling and HART</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --wire:#8A939A; --live:#178F4C; --liveglow:rgba(23,143,76,.22);
+  --amber:#B97C00; --red:#C13D2B; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5; --c2:#9A6400; --c2bg:#F6E7C8; --c3:#177A45; --c3bg:#D6EEDF; --c4:#7A3C99; --c4bg:#EBDDF2;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+    --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+  --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+/* Header: a nameplate, like an engraved panel tag */
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand h1 a{color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:5px;padding:4px 0}
+.brand h1 a::before{content:"\2039";opacity:.6;font-weight:600}
+.brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+.plats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:10px}
+.plats button{grid-column:span 2;min-width:0;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 4px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plats button:nth-child(n+4){grid-column:span 3}
+.plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+h3{font-size:17px;margin:20px 0 6px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.seg{display:flex;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-weight:600;cursor:pointer;border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+
+/* Ladder: the one bold element */
+.ladder{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;margin-top:14px;padding:6px 2px}
+.ladder svg{display:block;width:100%;height:auto}
+.ladder .rail{stroke:var(--live);stroke-width:4}
+.ladder .w{stroke:var(--wire);stroke-width:2.5;fill:none;transition:stroke .08s}
+.ladder .w.on{stroke:var(--live);stroke-width:3.5;filter:drop-shadow(0 0 3px var(--liveglow))}
+.ladder .cb{stroke:var(--ink);stroke-width:2.5}
+.ladder .cfill{fill:transparent}
+.ladder .cfill.on{fill:var(--live)}
+.ladder .coil{fill:none;stroke:var(--ink);stroke-width:2.5}
+.ladder .coil.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .box{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder text{fill:var(--ink);font-family:var(--sans);font-size:12px}
+.ladder .addr{font-family:var(--mono);font-size:10.5px;fill:var(--c1)}
+.ladder .tag{font-size:11px;fill:var(--muted)}
+.ladder .big{font-weight:700;font-size:15px}
+.ladder .val{font-family:var(--mono);font-size:12px;font-weight:700}
+.ladder .ind{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .ind.on{fill:var(--live);stroke:var(--live)}
+.ladder .indt{font-size:10px;font-weight:700}
+.ladder .indt.on{fill:#fff}
+.lamp{fill:var(--surface2);stroke:var(--ink);stroke-width:1.5}
+.lamp.on{fill:var(--live);filter:drop-shadow(0 0 6px var(--live))}
+
+/* Controls */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);color:var(--onpanel);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 12px rgba(0,0,0,.25)}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inds{display:flex;align-items:center;gap:14px;min-width:0}
+.pilot{display:flex;align-items:center;gap:8px}
+.pilot b{display:block;font-size:14px}
+.pilot small{display:block;font-family:var(--mono);font-size:11px;opacity:.75}
+.plamp{width:40px;height:40px;border-radius:50%;flex:none;background:#3A4650;box-shadow:inset 0 0 0 3px rgba(255,255,255,.15);transition:background .08s}
+.plamp.on{background:var(--live);box-shadow:0 0 16px var(--live)}
+.bits{display:flex;gap:8px}
+.bl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
+.bl i{width:16px;height:16px;border-radius:50%;background:#3A4650;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+.bl i.on{background:var(--live);box-shadow:0 0 8px var(--live)}
+.acts{display:flex;gap:14px;flex:none}
+.bar .switch,.bar .pb{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .knob{width:44px;height:44px;background:#1A2228}
+.bar .pb .cap{width:44px;height:44px}
+.bar .switch b,.bar .pb b{font-size:13px}
+.bar .switch small,.bar .pb small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.switch{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left}
+.knob{width:46px;height:46px;border-radius:50%;background:var(--panel);position:relative;flex:none;box-shadow:inset 0 0 0 3px var(--wire)}
+.knob::after{content:"";position:absolute;left:50%;top:7px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:var(--onpanel);transform:rotate(-40deg);transform-origin:50% 16px;transition:transform .15s}
+.switch[aria-pressed="true"] .knob::after{transform:rotate(40deg)}
+.switch[aria-pressed="true"] .knob{box-shadow:inset 0 0 0 3px var(--live)}
+.switch b{display:block;font-size:16px}
+.switch small{color:var(--muted);font-size:13px}
+.pb{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;user-select:none;-webkit-user-select:none;touch-action:none}
+.pb .cap{width:46px;height:46px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 4px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb.held .cap{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb b{display:block;font-size:16px}
+.pb small{color:var(--muted);font-size:13px}
+
+.status{width:100%;border-collapse:collapse;margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;font-size:15px}
+.status td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+.status tr:first-child td{border-top:0}
+.status td:first-child{font-family:var(--mono);font-size:13px;color:var(--c1);white-space:nowrap}
+.status td.v{font-family:var(--mono);font-weight:700;white-space:nowrap;width:5.5em}
+.bit{display:inline-block;min-width:2.2em;text-align:center;border-radius:4px;padding:0 4px;background:var(--surface2);color:var(--muted)}
+.bit.on{background:var(--live);color:#fff}
+.status td.m{color:var(--muted);font-size:14px}
+
+.chartbox{margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.chartbox canvas{display:block;width:100%;height:210px}
+.note{margin-top:14px;padding:12px 14px;border-left:4px solid var(--amber);background:var(--surface);border-radius:0 8px 8px 0}
+.note p{margin:4px 0}
+.try{margin-top:12px;padding:12px 14px;border-left:4px solid var(--live);background:var(--surface);border-radius:0 8px 8px 0}
+
+.qtext code,.qexp code,.note code,.try code,p code{font-family:var(--mono);font-size:.9em;color:var(--c1)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* Counters: momentary pushbuttons, one cap color per job */
+.pb .cap,.pb.held .cap{background:var(--cap,var(--red))}
+.pb .cap{box-shadow:0 4px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.held .cap{box-shadow:0 1px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.k-up{--cap:var(--live)} .pb.k-dn{--cap:var(--amber)} .pb.k-rs{--cap:var(--red)} .pb.k-ld{--cap:var(--c1)}
+.bar .acts{gap:10px}
+.bar .inds{gap:10px}
+@media (max-width:400px){ .pilot small{display:none} .bar .pb b{font-size:12px} }
+
+/* Analog */
+#pageSeg button{font-size:14px;padding:9px 2px}
+.ladder .wr{stroke:var(--wire);stroke-width:2.5;fill:none;stroke-linecap:round}
+.ladder .flow{stroke:var(--live);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:7 7;animation:flow .7s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-14}}
+.ladder .term{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .psu,.ladder .xmtr,.ladder .vfd{fill:var(--surface2);stroke:var(--line);stroke-width:2}
+.ladder .mod{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder .res{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .tank{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .liquid{fill:var(--c1bg);stroke:var(--c1);stroke-width:1.5}
+.ladder .lcd{fill:var(--panel);stroke:var(--ink);stroke-width:1}
+.ladder .lcdt{font-family:var(--mono);font-size:13px;font-weight:700;fill:#7EDCA6}
+.ladder .knob2{fill:var(--panel);stroke:var(--ink);stroke-width:2}
+.ladder .meter{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .mu{font-size:10px;font-weight:700;fill:var(--muted)}
+.ladder .mv{font-family:var(--mono);font-size:11px;font-weight:700;fill:var(--ink)}
+.ladder .plbl{font-size:12px;font-weight:700;fill:var(--ink)}
+.ladder .pv{font-family:var(--mono);font-size:11px;font-weight:700;fill:var(--c1)}
+.ladder .pm{font-family:var(--mono);font-size:15px;font-weight:700;fill:var(--ink)}
+.ladder .tl{font-family:var(--mono);font-size:11px;font-weight:700;fill:var(--c1)}
+.ladder .cut{font-size:14px;fill:var(--red)}
+.ladder .pump{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .blade{fill:var(--c1)}
+.ladder .hub{fill:var(--ink)}
+.ladder .imp{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ladder .axis{stroke:var(--wire);stroke-width:1.5}
+.ladder .grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}
+.ladder .tick{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+.ladder .sline{stroke:var(--c1);stroke-width:3}
+.ladder .guide{stroke:var(--amber);stroke-width:1.5;stroke-dasharray:4 3}
+.ladder .gdot{fill:var(--amber);stroke:var(--surface);stroke-width:2}
+.rng{width:100%;accent-color:var(--c1);margin:4px 0 6px}
+.brk{margin:4px 0 8px}
+.tgl{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}
+.tgl[aria-pressed="true"]{background:var(--red);color:#fff}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
+.chip{background:var(--surface);border:1.5px solid var(--line);border-radius:8px;padding:5px 9px;min-width:0}
+.chip small{display:block;font-size:11px;color:var(--muted);line-height:1.2}
+.chip b{font-family:var(--mono);font-size:15px}
+.chip.raw{border-color:var(--c1)}
+.chip.raw b{color:var(--c1)}
+.arw{color:var(--muted);font-weight:700}
+.result{margin:10px 0 0;padding:10px 12px;border-radius:8px;background:var(--surface);border:1.5px solid var(--line);font-size:15px}
+.result.ok{border-color:var(--live)}
+.result.bad{border-color:var(--red)}
+.formula{margin:8px 0 0;font-family:var(--mono);font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.formula .muted{font-family:var(--sans);font-size:14px}
+.tt td{text-align:left;font-family:var(--sans);vertical-align:top}
+.tt tr.th td{font-weight:600;background:var(--surface2);color:var(--ink);font-size:14px}
+.tt td:first-child{font-family:var(--sans);color:var(--ink);white-space:normal}
+.allT td:nth-child(2),.allT td:nth-child(3){font-family:var(--mono);white-space:nowrap}
+.allT td:nth-child(3){font-weight:700}
+.allT td small{display:block;color:var(--muted);font-size:12px}
+.allT tr.cur td{background:var(--liveglow)}
+.allT tr.cur td:first-child{box-shadow:inset 4px 0 0 var(--live)}
+.cmpT td{font-size:14px}
+#pgHart .chartbox canvas{height:200px}
+@media (prefers-reduced-motion: reduce){.ladder .flow{animation:none;stroke-dasharray:none}.ladder .imp{animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.0</span></div>
+    <div class="plats" role="group" aria-label="PLC platform">
+      <button data-plat="slc">SLC 500</button>
+      <button data-plat="clx">CompactLogix</button>
+      <button data-plat="s7">Siemens S7</button>
+      <button data-plat="click">CLICK</button>
+      <button data-plat="dl06">DL06</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="seg" id="pageSeg" role="group" aria-label="Page">
+      <button data-page="sig">Wiring</button><button data-page="in">Input</button><button data-page="out">Output</button><button data-page="hart">HART</button>
+    </div>
+    <div id="sigTypeWrap">
+      <div class="lbl">Signal</div>
+      <div class="seg" id="sigSeg" role="group" aria-label="Signal type">
+        <button data-sig="V">0–10 V</button><button data-sig="mA">4–20 mA</button>
+      </div>
+    </div>
+    <h2 id="title"></h2>
+    <p id="desc"></p>
+
+    <!-- Signals & wiring -->
+    <div id="pgSig" hidden>
+      <div class="lbl">Wiring</div>
+      <div class="seg" id="wireSeg" role="group" aria-label="Wiring"></div>
+      <div class="ladder" id="wdiag" aria-label="Wiring diagram"></div>
+      <label class="lbl" for="pctRange">Process: <b id="pctVal"></b></label>
+      <input type="range" class="rng" id="pctRange" min="0" max="100" step="1" value="50">
+      <div class="lbl">0–10 V or 4–20 mA?</div>
+      <table class="status tt cmpT" id="vsTbl"></table>
+    </div>
+
+    <!-- Input / Output -->
+    <div id="pgIO" hidden>
+      <div id="srcWrap">
+        <div class="lbl">Signal source</div>
+        <div class="seg" id="srcSeg" role="group" aria-label="Signal source">
+          <button data-src="tank">Transmitter</button><button data-src="bench"></button>
+        </div>
+      </div>
+      <div class="ladder" id="scene" aria-label="Signal path"></div>
+      <label class="lbl" for="ioRange" id="ioLbl"></label>
+      <input type="range" class="rng" id="ioRange" min="0" max="120" step="0.5" value="60">
+      <div class="brk"><button class="tgl" id="brkBtn" aria-pressed="false">Cut the wire</button></div>
+      <div class="chain" id="chain"></div>
+      <p class="result" id="fault" aria-live="polite" hidden></p>
+      <div class="lbl">Scaling in the program</div>
+      <div class="ladder" id="instr" aria-label="Scaling instruction"></div>
+      <p class="formula" id="formula"></p>
+      <div class="lbl" id="graphLbl"></div>
+      <div class="ladder" id="graph" aria-label="Scaling graph"></div>
+      <div class="lbl">The same signal on all five PLCs</div>
+      <table class="status tt allT" id="allTbl"></table>
+    </div>
+
+    <!-- HART -->
+    <div id="pgHart" hidden>
+      <div class="chartbox"><canvas id="hartCv" aria-label="HART signal on a 4 to 20 mA loop"></canvas></div>
+      <div class="brk"><button class="tgl" id="hartBtn" aria-pressed="true">HART signal on</button></div>
+      <table class="status tt cmpT" id="hartTbl"></table>
+    </div>
+
+    <div class="try" id="tryBox"></div>
+    <div class="note" id="noteBox"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+var store = {
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var PLATS=["slc","clx","s7","click","dl06"];
+var state = {
+  plat: store.get("rl-plat") || "slc",
+  page: store.get("an-page") || "in",
+  sig: "V", src:"tank", level:60, bench:{V:6, mA:12}, hz:36, broken:false, wire:"v", pct:50, hart:true
+};
+if(PLATS.indexOf(state.plat)<0) state.plat="slc";
+if(["sig","in","out","hart"].indexOf(state.page)<0) state.page="in";
+var ENG = {in:{max:120, unit:"in", name:"Tank level"}, out:{max:60, unit:"Hz", name:"Pump speed"}};
+
+/* ---------- Module data ----------
+   Each range maps signal s0..s1 to raw r0..r1; lo/hi are the module's limits. */
+var P = {
+  slc:{ name:"SLC 500", inMod:"1746-NIO4V", outMod:{V:"1746-NIO4V", mA:"1746-NIO4I"},
+    inR:{V:{s0:0,s1:10,r0:0,r1:32767,lo:-32768,hi:32767}, mA:{s0:4,s1:20,r0:3277,r1:16384,lo:-16384,hi:16384}},
+    outR:{V:{s0:0,s1:10,r0:0,r1:32764}, mA:{s0:4,s1:20,r0:6242,r1:31208}},
+    inAddr:"I:1.0", outAddr:"O:1.0", inEng:"N7:10", outEng:"N7:20", style:"scp",
+    brk:"The NIO4V just reads the low current. Add a compare in the program: raw below 2949 (3.6 mA) means a broken wire or failed transmitter.",
+    note:"<p><b>SLC 500, 1746-NIO4V:</b> two inputs (voltage or current, set per channel with a switch) and two <b>voltage-only</b> outputs. The inputs read −32768 to 32767 for ±10 V, so 0–10 V is 0–32767. In current mode ±20 mA reads ±16384, so 4–20 mA is 3277–16384. Outputs: 0–10 V is 0–32764. For 4–20 mA outputs you would use a 1746-NIO4I or NO4I, where 4–20 mA is 6242–31208.</p><p><b>SCP</b> (Scale with Parameters) needs an SLC 5/03 or newer. Older programs scale with SCL.</p>" },
+  clx:{ name:"CompactLogix", inMod:"1769-IF4", outMod:{V:"1769-OF4", mA:"1769-OF4"},
+    inR:{V:{s0:0,s1:10,r0:0,r1:10000,lo:-500,hi:10500}, mA:{s0:4,s1:20,r0:4000,r1:20000,lo:3200,hi:21000}},
+    outR:{V:{s0:0,s1:10,r0:0,r1:10000}, mA:{s0:4,s1:20,r0:4000,r1:20000}},
+    inAddr:"Local:1:I.Ch0Data", outAddr:"Local:2:O.Ch0Data", inEng:"Tank_Level", outEng:"Pump_Speed_Hz", style:"scp",
+    brk:"The 1769-IF4 bottoms out at 3.2 mA (3200) and turns on the channel’s under-range status bit. Use that bit to alarm.",
+    note:"<p><b>CompactLogix, 1769-IF4 / 1769-OF4:</b> each channel has a <b>data format</b> chosen in the module configuration. This page uses <b>Engineering Units</b>: 0–10 V reads 0–10000 (millivolts) and 4–20 mA reads 4000–20000 (microamps). Other formats: Raw/Proportional (the full ±32767 span), Scaled-for-PID (0–16383) and Percent (0–10000 = 0.00–100.00%).</p><p>SCP scales into a REAL tag, so you keep the decimals.</p>" },
+  s7:{ name:"Siemens S7", inMod:"Built-in AI, SB 1231 or SM 1231", outMod:{V:"SB 1232 or SM 1232", mA:"SB 1232 or SM 1232"},
+    inR:{V:{s0:0,s1:10,r0:0,r1:27648,lo:0,hi:32511}, mA:{s0:4,s1:20,r0:0,r1:27648,lo:-4864,hi:32511}},
+    outR:{V:{s0:0,s1:10,r0:0,r1:27648}, mA:{s0:4,s1:20,r0:0,r1:27648}},
+    inAddr:"%IW64", outAddr:"%QW80", inEng:"\"Tank_Level\"", outEng:"\"Pump_Speed_Hz\"", style:"s7",
+    brk:"With wire-break diagnostics enabled in the module’s properties, a broken 4–20 mA loop reads 32767 (16#7FFF) and the module reports a diagnostic. Check for 32767 before you scale.",
+    note:"<p><b>S7-1200:</b> the CPU’s built-in inputs (0–10 V), signal boards that snap onto the front (SB 1231 in, SB 1232 out) and signal modules on the side (SM 1231, SM 1232, SM 1234) all use the same nominal range: <b>0 to 27648</b>, for 0–10 V and for 4–20 mA. Values up to 32511 mean over-range.</p><p>Scaling takes two instructions: <b>NORM_X</b> turns the raw value into 0.0–1.0, then <b>SCALE_X</b> turns that into engineering units. For an output, run them the other way: NORM_X on the engineering value, then SCALE_X to 0–27648.</p>" },
+  click:{ name:"CLICK", inMod:"C0-04AD-1 / -2", outMod:{V:"C0-04DA-2", mA:"C0-04DA-1"},
+    inR:{V:{s0:0,s1:10,r0:0,r1:4095,lo:0,hi:4095}, mA:{s0:4,s1:20,r0:0,r1:4095,lo:0,hi:4095}},
+    outR:{V:{s0:0,s1:10,r0:0,r1:4095}, mA:{s0:4,s1:20,r0:0,r1:4095}},
+    inAddr:"DS1", outAddr:"DS2", inEng:"DF1", outEng:"DF2", style:"math",
+    brk:"With 4 mA reading 0, a broken wire also reads 0, the same as an empty tank. Check the module’s setup and manual for an under-range or broken-transmitter flag, and use it.",
+    note:"<p><b>CLICK:</b> the analog modules are 12-bit, 0–4095 (-1 models for current, -2 for voltage). The CLICK software’s analog setup can also scale a channel straight into engineering units. This page shows the same scaling done with a Math instruction so you can see the formula.</p>" },
+  dl06:{ name:"DL06", inMod:"F0-04AD-1 / -2", outMod:{V:"F0-2AD2DA-2", mA:"F0-4AD2DA-1"},
+    inR:{V:{s0:0,s1:10,r0:0,r1:4095,lo:0,hi:4095}, mA:{s0:4,s1:20,r0:0,r1:4095,lo:0,hi:4095}},
+    outR:{V:{s0:0,s1:10,r0:0,r1:4095}, mA:{s0:4,s1:20,r0:0,r1:4095}},
+    inAddr:"V2000", outAddr:"V2010", inEng:"V2100", outEng:"V2110", style:"math",
+    brk:"With 4 mA reading 0, a broken wire also reads 0, the same as an empty tank. Check the card’s manual for its broken-transmitter indication, and use it.",
+    note:"<p><b>DL06:</b> analog option cards (such as the F0-04AD inputs and the F0-2AD2DA and F0-4AD2DA combo cards) are 12-bit, 0–4095. The card’s data is copied into V-memory each scan (the pointer method), and the program scales it with math instructions.</p>" }
+};
+
+/* ---------- Math ---------- */
+function sigOfEng(dir,e){ var R=P[state.plat][dir+"R"][state.sig]; return R.s0+(e/ENG[dir].max)*(R.s1-R.s0) }
+function rawOfSig(plat,dir,sig,s){
+  var R=P[plat][dir+"R"][sig], r=R.r0+(s-R.s0)*(R.r1-R.r0)/(R.s1-R.s0);
+  if(R.lo!=null) r=Math.max(R.lo,Math.min(R.hi,r));
+  return Math.round(r);
+}
+function engOfRaw(dir,raw){ var R=P[state.plat][dir+"R"][state.sig]; return (raw-R.r0)*ENG[dir].max/(R.r1-R.r0) }
+function rawOfEng(dir,e){ var R=P[state.plat][dir+"R"][state.sig]; return Math.round(R.r0+e*(R.r1-R.r0)/ENG[dir].max) }
+function fmtSig(s){ return state.sig==="V" ? s.toFixed(2)+" V" : s.toFixed(2)+" mA" }
+function f1(n){ return (Math.round(n*10)/10).toFixed(1) }
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function txt(x,y,t,cls,anchor){return '<text class="'+(cls||"tag")+'" x="'+x+'" y="'+y+'"'+(anchor?' text-anchor="'+anchor+'"':'')+'>'+t+'</text>'}
+function line(x1,y1,x2,y2,cls){return '<line class="'+(cls||"wr")+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'}
+function poly(pts,cls){return '<polyline class="'+cls+'" points="'+pts.map(function(p){return p.join(",")}).join(" ")+'"/>'}
+function term(x,y){return '<circle class="term" cx="'+x+'" cy="'+y+'" r="4"/>'}
+function meter(cx,cy,val,unit){
+  return '<circle class="meter" cx="'+cx+'" cy="'+cy+'" r="27"/>'+txt(cx,cy-6,unit==="V"?"V":"mA","mu","middle")+txt(cx,cy+11,val,"mv","middle");
+}
+
+/* ---------- Input state: what signal is on the wire right now ---------- */
+function inputSignal(){
+  if(state.broken) return 0;
+  if(state.src==="bench") return state.bench[state.sig];
+  return sigOfEng("in",state.level);
+}
+function inputRaw(s){
+  if(state.plat==="s7" && state.sig==="mA" && state.broken) return 32767;   /* wire-break diagnostic value */
+  return rawOfSig(state.plat,"in",state.sig,s);
+}
+function faultOf(s,raw){
+  if(state.sig==="mA" && s<3.6) return true;
+  return false;
+}
+
+/* ---------- Scene: source -> meter -> module (input), module -> meter -> VFD (output) ---------- */
+function buildInScene(s,raw){
+  var o="", V=state.sig==="V", yT=70, yB=136, live=!state.broken;
+  if(state.src==="tank"){
+    var lvl=Math.max(0,Math.min(1,state.level/120)), top=24, bot=176, h=(bot-top)*lvl;
+    o+='<rect class="tank" x="14" y="'+top+'" width="78" height="'+(bot-top)+'" rx="6"/>'+
+       '<rect class="liquid" x="16" y="'+(bot-h)+'" width="74" height="'+h+'" rx="4"/>'+
+       txt(53,top+16,f1(state.level)+" in","pv","middle")+
+       '<rect class="xmtr" x="96" y="'+(yT-14)+'" width="40" height="'+(yB-yT+28)+'" rx="5"/>'+txt(116,(yT+yB)/2+4,"LT","plbl","middle")+
+       txt(116,yB+30,"transmitter","tag","middle");
+  } else {
+    o+='<rect class="psu" x="14" y="'+(yT-28)+'" width="122" height="'+(yB-yT+56)+'" rx="6"/>'+
+       txt(75,yT-10,V?"Bench power supply":"Loop calibrator","plbl","middle")+
+       '<rect class="lcd" x="34" y="'+(yT+8)+'" width="82" height="28" rx="3"/>'+txt(75,yT+27,fmtSig(state.bench[state.sig]),"lcdt","middle")+
+       '<circle class="knob2" cx="75" cy="'+(yB+4)+'" r="10"/>';
+  }
+  /* wires to the module, meter in parallel (V) or in series (mA) */
+  var xs=136, xm=236;
+  if(V){
+    o+=line(xs,yT,state.broken?165:xm,yT)+line(xs,yB,xm,yB)+(state.broken?line(180,yT,xm,yT)+txt(172,yT-8,"✖","cut","middle"):"");
+    o+=line(200,yT,200,yT+8)+line(200,yB,200,yB-8)+meter(200,(yT+yB)/2,s.toFixed(2),"V");
+  } else {
+    o+=line(xs,yT,166,yT)+line(222,yT,xm,yT)+line(xs,yB,state.broken?165:xm,yB)+(state.broken?line(180,yB,xm,yB)+txt(172,yB-8,"✖","cut","middle"):"")+meter(194,yT,s.toFixed(2),"mA");
+    if(live && s>0) o+=poly([[xs,yT],[166,yT]],"flow")+poly([[222,yT],[xm,yT],[262,yT],[262,yB],[xm,yB],[xs,yB]],"flow");
+  }
+  /* module */
+  var p=P[state.plat];
+  o+='<rect class="mod" x="'+xm+'" y="18" width="116" height="168" rx="6"/>'+txt(294,34,esc(p.inMod.split(",")[0].split(" / ")[0]),"plbl","middle")+
+     term(xm,yT)+term(xm,yB)+txt(xm+8,yT-6,V?"V0+":"I0+","tl")+txt(xm+8,yB+16,"COM","tl")+
+     (V?"":line(xm,yT,262,yT)+line(262,yT,262,yB)+line(262,yB,xm,yB)+'<rect class="res" x="256" y="'+((yT+yB)/2-12)+'" width="12" height="24" rx="2"/>')+
+     txt(318,(yT+yB)/2-14,"raw","tag","middle")+'<rect class="lcd" x="'+(V?262:276)+'" y="'+((yT+yB)/2-8)+'" width="'+(V?82:70)+'" height="24" rx="3"/>'+txt(V?303:311,(yT+yB)/2+9,String(raw),"lcdt","middle");
+  document.getElementById("scene").innerHTML='<svg viewBox="0 0 360 196" role="img" aria-label="Signal from the source to the input module">'+o+'</svg>';
+}
+function buildOutScene(raw,s,vfdHz){
+  var o="", V=state.sig==="V", yT=70, yB=136, xm=124, p=P[state.plat];
+  o+='<rect class="mod" x="8" y="18" width="116" height="168" rx="6"/>'+txt(66,34,esc(p.outMod[state.sig].split(" or ")[0]),"plbl","middle")+
+     txt(46,(yT+yB)/2-14,"raw","tag","middle")+'<rect class="lcd" x="14" y="'+((yT+yB)/2-8)+'" width="70" height="24" rx="3"/>'+txt(49,(yT+yB)/2+9,String(raw),"lcdt","middle")+
+     term(xm,yT)+term(xm,yB)+txt(xm-8,yT-6,V?"V0+":"I0+","tl","end")+txt(xm-8,yB+16,"COM","tl","end");
+  var xv=240;
+  if(V){
+    o+=line(xm,yT,state.broken?165:xv,yT)+line(xm,yB,xv,yB)+(state.broken?line(180,yT,xv,yT)+txt(172,yT-8,"✖","cut","middle"):"");
+    o+=line(200,yT,200,yT+8)+line(200,yB,200,yB-8)+meter(200,(yT+yB)/2,s.toFixed(2),"V");
+  } else {
+    o+=line(xm,yT,170,yT)+line(226,yT,xv,yT)+line(xm,yB,state.broken?165:xv,yB)+(state.broken?line(180,yB,xv,yB)+txt(172,yB-8,"✖","cut","middle"):"")+meter(198,yT,s.toFixed(2),"mA");
+    if(!state.broken && s>0) o+=poly([[xm,yT],[170,yT]],"flow")+poly([[226,yT],[xv,yT]],"flow")+poly([[xv,yB],[xm,yB]],"flow");
+  }
+  /* VFD and pump */
+  o+='<rect class="vfd" x="'+xv+'" y="18" width="112" height="100" rx="6"/>'+txt(xv+56,36,"VFD","plbl","middle")+
+     '<rect class="lcd" x="'+(xv+16)+'" y="46" width="80" height="26" rx="3"/>'+txt(xv+56,64,f1(vfdHz)+" Hz","lcdt","middle")+
+     term(xv,yT)+term(xv,yB)+txt(xv+8,yT+18,V?"AI1 (V)":"AI2 (mA)","tl");
+  var dur = vfdHz>0.5 ? (60/vfdHz*0.6).toFixed(2)+"s" : "0s";
+  o+='<g transform="translate('+(xv+56)+',158)"><circle class="pump" r="22"/>'+
+     '<g class="imp"'+(vfdHz>0.5?' style="animation-duration:'+dur+'"':' style="animation:none"')+'><path class="blade" d="M0,-16 L4,0 L0,16 L-4,0 Z"/><path class="blade" d="M-16,0 L0,4 L16,0 L0,-4 Z"/></g>'+
+     '<circle class="hub" r="4"/></g>'+txt(xv+56,194,"Pump","tag","middle")+line(xv,yB,xv+30,yB);
+  document.getElementById("scene").innerHTML='<svg viewBox="0 0 360 200" role="img" aria-label="Output module to the VFD">'+o+'</svg>';
+}
+
+/* ---------- Scaling instruction drawn per PLC ---------- */
+function box(x,y,w,title,sub,rows){
+  var h=30+rows.length*16, o='<rect class="box" x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="3"/>'+
+    '<text class="big" x="'+(x+8)+'" y="'+(y+18)+'">'+title+'</text>'+(sub?'<text class="tag" x="'+(x+w-8)+'" y="'+(y+18)+'" text-anchor="end">'+sub+'</text>':'');
+  rows.forEach(function(r,i){ var yy=y+36+i*16; o+='<text x="'+(x+8)+'" y="'+yy+'">'+r[0]+'</text><text class="val" x="'+(x+w-8)+'" y="'+yy+'" text-anchor="end">'+esc(r[1])+'</text>' });
+  return {svg:o, h:h};
+}
+function buildInstr(dir,raw,eng){
+  var p=P[state.plat], R=p[dir+"R"][state.sig], E=ENG[dir].max, o="", H;
+  var isIn=dir==="in", srcA=isIn?p.inAddr:p.outEng, dstA=isIn?p.inEng:p.outAddr;
+  var inLo=isIn?R.r0:0, inHi=isIn?R.r1:E, outLo=isIn?0:R.r0, outHi=isIn?E:R.r1, inV=isIn?raw:f1(eng), outV=isIn?f1(eng):raw;
+  if(p.style==="scp"){
+    var b=box(70,8,220,"SCP","Scale w/ Parameters",[["Input",srcA],["",String(inV)],["Input Min",String(inLo)],["Input Max",String(inHi)],["Scaled Min",String(outLo)],["Scaled Max",String(outHi)],["Output",dstA],["",String(outV)]]);
+    o=b.svg; H=b.h+16;
+  } else if(p.style==="s7"){
+    var b1=box(8,8,166,"NORM_X",isIn?"Int to Real":"Real to Real",[["MIN",String(inLo)],["VALUE",srcA],["",String(inV)],["MAX",String(inHi)],["OUT","#norm"],["",((isIn?raw-R.r0:eng)/(isIn?R.r1-R.r0:E)).toFixed(3)]]);
+    var b2=box(186,8,166,"SCALE_X",isIn?"Real to Real":"Real to Int",[["MIN",String(outLo)],["VALUE","#norm"],["MAX",String(outHi)],["OUT",dstA],["",String(outV)]]);
+    o=b1.svg+b2.svg+'<line class="w on" x1="174" y1="70" x2="186" y2="70"/>'; H=Math.max(b1.h,b2.h)+16;
+  } else {
+    var expr = isIn ? dstA+" = ("+srcA+" − "+R.r0+") × "+E+" ÷ "+(R.r1-R.r0) : dstA+" = "+srcA+" × "+(R.r1-R.r0)+" ÷ "+E+(R.r0?" + "+R.r0:"");
+    if(isIn && R.r0===0) expr = dstA+" = "+srcA+" × "+E+" ÷ "+R.r1;
+    var b3=box(20,8,320,state.plat==="dl06"?"MATH":"Math","",[["Formula",""],["",expr],[srcA,String(inV)],[dstA,String(outV)]]);
+    o=b3.svg; H=b3.h+16;
+  }
+  document.getElementById("instr").innerHTML='<svg viewBox="0 0 360 '+H+'" role="img" aria-label="Scaling instruction">'+o+'</svg>';
+  /* the plain formula with this PLC's numbers */
+  var f = isIn
+    ? "Scaled = (raw − "+R.r0+") × ("+E+" − 0) ÷ ("+R.r1+" − "+R.r0+") + 0 = ("+raw+" − "+R.r0+") × "+E+" ÷ "+(R.r1-R.r0)+" = <b>"+f1(eng)+" "+ENG.in.unit+"</b>"
+    : "Raw = "+ENG.out.unit+" × ("+R.r1+" − "+R.r0+") ÷ "+E+" + "+R.r0+" = "+f1(eng)+" × "+(R.r1-R.r0)+" ÷ "+E+" + "+R.r0+" = <b>"+raw+"</b>";
+  document.getElementById("formula").innerHTML=f+'<br><span class="muted">It’s a straight line, y = mx + b: every scaling instruction is just this formula in a box.</span>';
+}
+function buildGraph(dir,raw,eng){
+  var p=P[state.plat], R=p[dir+"R"][state.sig], E=ENG[dir].max, isIn=dir==="in";
+  var X0=50,X1=340,Y0=150,Y1=14, o="";
+  /* x axis: the input of the instruction; y axis: its output */
+  var xmin=isIn?R.r0:0, xmax=isIn?R.r1:E, ymin=isIn?0:R.r0, ymax=isIn?E:R.r1;
+  function X(v){return X0+(v-xmin)/(xmax-xmin)*(X1-X0)} function Y(v){return Y0-(v-ymin)/(ymax-ymin)*(Y0-Y1)}
+  o+=line(X0,Y0,X1,Y0,"axis")+line(X0,Y0,X0,Y1,"axis");
+  [0,0.25,0.5,0.75,1].forEach(function(t){
+    var xv=xmin+t*(xmax-xmin), yv=ymin+t*(ymax-ymin);
+    o+=line(X(xv),Y0,X(xv),Y0+4,"axis")+txt(X(xv),Y0+16,isIn?String(Math.round(xv)):String(Math.round(xv)),"tick","middle")+
+       line(X0-4,Y(yv),X0,Y(yv),"axis")+txt(X0-7,Y(yv)+4,isIn?String(Math.round(yv)):String(Math.round(yv)),"tick","end")+
+       '<line class="grid" x1="'+X0+'" y1="'+Y(yv)+'" x2="'+X1+'" y2="'+Y(yv)+'"/>';
+  });
+  o+='<line class="sline" x1="'+X(xmin)+'" y1="'+Y(ymin)+'" x2="'+X(xmax)+'" y2="'+Y(ymax)+'"/>';
+  var xv=isIn?raw:eng, yv=isIn?eng:raw, cx=Math.max(X0,Math.min(X1,X(xv))), cy=Math.max(Y1,Math.min(Y0,Y(yv)));
+  o+='<line class="guide" x1="'+cx+'" y1="'+Y0+'" x2="'+cx+'" y2="'+cy+'"/><line class="guide" x1="'+X0+'" y1="'+cy+'" x2="'+cx+'" y2="'+cy+'"/><circle class="gdot" cx="'+cx+'" cy="'+cy+'" r="6"/>';
+  o+=txt((X0+X1)/2,Y0+32,isIn?"Raw counts":ENG.out.name+" ("+ENG.out.unit+")","tag","middle");
+  document.getElementById("graphLbl").textContent = isIn ? "Raw counts in, inches out" : "Hz in, raw counts out";
+  document.getElementById("graph").innerHTML='<svg viewBox="0 0 360 190" role="img" aria-label="Scaling graph">'+o+'</svg>';
+}
+function buildAll(dir,s,eng){
+  var h='<tr class="th"><td>PLC</td><td>Range</td><td>Now</td></tr>';
+  PLATS.forEach(function(k){
+    var p=P[k], R=p[dir+"R"][state.sig], now = dir==="in" ? (k==="s7"&&state.sig==="mA"&&state.broken ? 32767 : rawOfSig(k,"in",state.sig,s)) : Math.round(R.r0+eng*(R.r1-R.r0)/ENG.out.max);
+    h+='<tr class="'+(k===state.plat?'cur':'')+'"><td><b>'+p.name+'</b><small>'+esc(dir==="in"?p.inMod:p.outMod[state.sig])+'</small></td><td>'+R.r0+'–'+R.r1+'</td><td>'+now+'</td></tr>';
+  });
+  document.getElementById("allTbl").innerHTML=h;
+}
+function chip(label,val,cls){return '<div class="chip'+(cls?' '+cls:'')+'"><small>'+label+'</small><b>'+val+'</b></div>'}
+var ARROW='<span class="arw" aria-hidden="true">→</span>';
+
+function renderIO(){
+  var dir=state.page, p=P[state.plat], V=state.sig==="V";
+  var rng=document.getElementById("ioRange"), lbl=document.getElementById("ioLbl");
+  document.querySelector('#srcSeg [data-src="bench"]').textContent = V ? "Bench power supply" : "Loop calibrator";
+  document.getElementById("srcWrap").hidden = dir!=="in";
+  if(dir==="in"){
+    if(state.src==="tank"){ rng.min=0; rng.max=120; rng.step=0.5; rng.value=state.level; lbl.innerHTML="Tank level: <b>"+f1(state.level)+" in</b> of 120"; }
+    else { rng.min=0; rng.max=V?10.5:24; rng.step=0.05; rng.value=state.bench[state.sig]; lbl.innerHTML=(V?"Supply voltage":"Calibrator current")+": <b>"+fmtSig(state.bench[state.sig])+"</b>"; }
+    var s=inputSignal(), raw=inputRaw(s), eng=engOfRaw("in",raw), pct=eng/120*100, fault=faultOf(s,raw);
+    buildInScene(s,raw);
+    document.getElementById("chain").innerHTML =
+      (state.src==="tank"?chip("Level",f1(state.level)+" in")+ARROW+chip("Percent",f1(state.level/120*100)+"%")+ARROW:"")+
+      chip("Signal",fmtSig(s))+ARROW+chip("Raw counts",String(raw),"raw")+ARROW+chip("Scaled",f1(eng)+" in")+ARROW+chip("Percent",f1(pct)+"%");
+    var fb=document.getElementById("fault");
+    if(state.broken){
+      fb.hidden=false;
+      if(V){ fb.className="result bad"; fb.innerHTML="✗ <b>0 V looks exactly like an empty tank.</b> With 0–10 V there is no way to tell a broken wire from a real zero. The program shows "+f1(eng)+" in and nobody knows it’s wrong."; }
+      else { fb.className="result ok"; fb.innerHTML="✓ <b>Below 3.6 mA: that’s a fault, not an empty tank.</b> A healthy 4–20 mA loop never goes below 4 mA, so 0 mA can only mean a broken wire or a dead transmitter. "+p.brk; }
+    } else if(fault){ fb.hidden=false; fb.className="result bad"; fb.innerHTML="⚠ Below 3.6 mA: the program should treat this as a fault (NAMUR NE43), not as a level."; }
+    else if(state.sig==="mA" && s>21){ fb.hidden=false; fb.className="result bad"; fb.innerHTML="⚠ Above 21 mA: over-range. Treat it as a fault too."; }
+    else fb.hidden=true;
+    buildInstr("in",raw,eng); buildGraph("in",raw,eng); buildAll("in",s,eng);
+  } else {
+    rng.min=0; rng.max=60; rng.step=0.5; rng.value=state.hz; lbl.innerHTML="Pump speed command: <b>"+f1(state.hz)+" Hz</b> of 60";
+    var rawO=rawOfEng("out",state.hz), sO=state.broken?0:sigOfEng("out",state.hz), R=p.outR[state.sig];
+    var vfd = state.broken ? 0 : (sO-R.s0)/(R.s1-R.s0)*60;
+    buildOutScene(rawO,sO,vfd);
+    document.getElementById("chain").innerHTML=chip("Command",f1(state.hz)+" Hz")+ARROW+chip("Percent",f1(state.hz/60*100)+"%")+ARROW+chip("Raw counts",String(rawO),"raw")+ARROW+chip("Signal",fmtSig(sO))+ARROW+chip("VFD speed",f1(vfd)+" Hz");
+    var fb2=document.getElementById("fault");
+    if(state.broken){ fb2.hidden=false; fb2.className="result bad"; fb2.innerHTML = V
+      ? "✗ The drive sees 0 V and runs at its minimum speed or stops, as if you asked for 0 Hz. Nothing tells you the wire is broken."
+      : "✓ The drive sees 0 mA, below the 4 mA live zero. Most drives can be set to treat a lost 4–20 mA reference as a fault, or to run a preset speed, so the problem is caught."; }
+    else fb2.hidden=true;
+    if(p.outMod.V!==p.outMod.mA && state.sig==="mA" && state.plat==="slc"){ fb2.hidden=false; fb2.className="result"; fb2.innerHTML="Your 1746-NIO4V outputs are voltage only. For a 4–20 mA output the SLC 500 uses a current module, such as the 1746-NIO4I or NO4I, shown here."; }
+    buildInstr("out",rawO,state.hz); buildGraph("out",rawO,state.hz); buildAll("out",0,state.hz);
+  }
+  var bb=document.getElementById("brkBtn"); bb.setAttribute("aria-pressed",String(state.broken)); bb.textContent = state.broken ? "Reconnect the wire" : "Cut the wire";
+}
+
+/* ---------- Signals & wiring diagrams ---------- */
+var WIRES=[["v","0–10 V"],["mA2","4–20 mA, 2-wire"],["mA4","4–20 mA, 4-wire"],["r250","250 Ω, 1–5 V"]];
+function buildWiring(){
+  var w=state.wire, p=state.pct/100, o="", mA=4+16*p, V=10*p, v15=1+4*p, fl="flow";
+  /* 24 VDC supply on the left, device in the middle, PLC input on the right */
+  var psu=function(lbl){ return '<rect class="psu" x="8" y="20" width="70" height="170" rx="6"/>'+txt(43,96,"Power","plbl","middle")+txt(43,112,"supply","plbl","middle")+txt(43,130,lbl,"pv","middle")+term(78,46)+term(78,166)+txt(68,50,"+","pm","end")+txt(68,170,"−","pm","end") };
+  var mod=function(t1,t2,name){ return '<rect class="mod" x="262" y="20" width="90" height="170" rx="6"/>'+txt(307,36,name,"plbl","middle")+term(262,96)+term(262,150)+txt(270,90,t1,"tl")+txt(270,166,t2,"tl") };
+  var xm=function(y1,y2,lbls){ var o2='<rect class="xmtr" x="128" y="'+y1+'" width="64" height="'+(y2-y1)+'" rx="6"/>'+txt(160,y1-6,"Transmitter","tag","middle"); lbls.forEach(function(l){o2+=term(l[0],l[1])+txt(l[0]+(l[0]<160?6:-6),l[1]+4,l[2],"tl",l[0]<160?"start":"end")}); return o2 };
+  if(w==="v"){
+    o+=psu("24 VDC")+mod("V0+","COM","Voltage in")+xm(54,170,[[128,70,"+24"],[128,150,"0V"],[192,96,"OUT"]]);
+    o+=line(78,46,110,46)+line(110,46,110,70)+line(110,70,128,70)+line(78,166,110,166)+line(110,166,110,150)+line(110,150,128,150)+line(110,166,240,166)+line(240,166,240,150)+line(240,150,262,150)+line(192,96,262,96);
+    o+=line(222,150,222,166)+meter(222,123,V.toFixed(2),"V");
+    o+=txt(180,214,"3 wires: power, common, signal. The PLC measures the voltage.","tag","middle");
+  } else if(w==="mA2"){
+    o+=psu("24 VDC")+mod("I0+","COM","Current in")+xm(80,150,[[128,96,"+"],[192,96,"−"]]);
+    o+=line(78,46,110,46)+line(110,46,110,96)+line(110,96,128,96)+line(192,96,206,96)+line(250,96,262,96)+line(262,150,262,150)+line(78,166,240,166)+line(240,166,240,150)+line(240,150,262,150)+meter(228,96,mA.toFixed(2),"mA");
+    o+=poly([[78,46],[110,46],[110,96],[128,96]],fl)+poly([[192,96],[202,96]],fl)+poly([[254,96],[262,96]],fl)+poly([[262,150],[240,150],[240,166],[78,166]],fl);
+    o+=txt(180,214,"2 wires: one series loop. The transmitter sets the current.","tag","middle");
+  } else if(w==="mA4"){
+    o+='<rect class="psu" x="8" y="20" width="70" height="70" rx="6"/>'+txt(43,50,"120 VAC","pv","middle")+txt(43,66,"power","tag","middle")+line(78,40,128,72)+line(78,64,128,84);
+    o+=mod("I0+","COM","Current in")+xm(60,170,[[128,72,"L1"],[128,84,"N"],[192,96,"I+"],[192,150,"I−"]]);
+    o+=line(192,96,206,96)+line(250,96,262,96)+line(192,150,262,150)+meter(228,96,mA.toFixed(2),"mA");
+    o+=poly([[192,96],[202,96]],fl)+poly([[254,96],[262,96]],fl)+poly([[262,150],[192,150]],fl);
+    o+=txt(180,214,"Powered separately. Its output drives the current loop.","tag","middle");
+  } else {
+    o+=psu("24 VDC")+mod("V0+","COM","Voltage in")+xm(80,150,[[128,96,"+"],[192,96,"−"]]);
+    o+=line(78,46,110,46)+line(110,46,110,96)+line(110,96,128,96)+line(192,96,262,96)+line(78,166,240,166)+line(240,166,240,150)+line(240,150,262,150);
+    o+=line(222,96,222,108)+'<rect class="res" x="214" y="108" width="16" height="30" rx="2"/>'+line(222,138,222,150)+line(222,150,240,150)+txt(212,126,"250 Ω","tl","end");
+    o+=poly([[78,46],[110,46],[110,96],[128,96]],fl)+poly([[192,96],[222,96],[222,108]],fl)+poly([[222,138],[222,150],[240,150],[240,166],[78,166]],fl);
+    o+='<rect class="lcd" x="270" y="112" width="74" height="24" rx="3"/>'+txt(307,129,v15.toFixed(2)+" V","lcdt","middle");
+    o+=txt(180,214,"4–20 mA × 250 Ω = 1–5 V across the resistor.","tag","middle");
+  }
+  document.getElementById("wdiag").innerHTML='<svg viewBox="0 0 360 222" role="img" aria-label="Analog wiring diagram">'+o+'</svg>';
+  document.getElementById("pctVal").textContent=state.pct+"%  →  "+(w==="v"?V.toFixed(2)+" V":w==="r250"?mA.toFixed(2)+" mA = "+v15.toFixed(2)+" V":mA.toFixed(2)+" mA");
+  document.getElementById("wireSeg").innerHTML=WIRES.map(function(x){return '<button data-w="'+x[0]+'" aria-pressed="'+(x[0]===w)+'">'+x[1]+'</button>'}).join("");
+  document.getElementById("vsTbl").innerHTML='<tr class="th"><td></td><td>0–10 V</td><td>4–20 mA</td></tr>'+
+    '<tr><td>Zero reads</td><td>0 V</td><td>4 mA (live zero)</td></tr>'+
+    '<tr><td>Broken wire</td><td>Looks like zero</td><td>0 mA: detected</td></tr>'+
+    '<tr><td>Long wire runs</td><td>Voltage drops along the wire</td><td>Same current all around the loop</td></tr>'+
+    '<tr><td>Electrical noise</td><td>Picks it up more easily</td><td>Very resistant</td></tr>'+
+    '<tr><td>Wiring</td><td>Usually 3 wires</td><td>Often 2 wires, loop-powered</td></tr>'+
+    '<tr><td>Test with</td><td>Voltmeter across the input</td><td>Ammeter in series, or a loop calibrator</td></tr>';
+}
+
+/* ---------- HART ---------- */
+var hartCv=document.getElementById("hartCv"), hctx=hartCv.getContext("2d"), hartT=0, hartRun=false, hartLast=null;
+var BITS="1011001110100101".split("").map(Number);
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function drawHart(ts){
+  if(!hartRun) return;
+  if(hartLast===null) hartLast=ts; var dt=Math.min(ts-hartLast,50); hartLast=ts; hartT+=dt;
+  var dpr=window.devicePixelRatio||1, w=hartCv.clientWidth, h=hartCv.clientHeight;
+  if(w){
+    if(hartCv.width!==Math.round(w*dpr)||hartCv.height!==Math.round(h*dpr)){hartCv.width=Math.round(w*dpr);hartCv.height=Math.round(h*dpr)}
+    hctx.setTransform(dpr,0,0,dpr,0,0); hctx.clearRect(0,0,w,h);
+    var left=44, mid=h*0.44, amp=h*0.2, mut=cssVar("--muted"), live=cssVar("--live"), c1=cssVar("--c1"), amber=cssVar("--amber"), line_=cssVar("--line");
+    hctx.font='600 11px '+cssVar("--sans"); hctx.textBaseline="middle";
+    /* the analog level: 12 mA */
+    hctx.strokeStyle=line_; hctx.setLineDash([4,4]); hctx.beginPath(); hctx.moveTo(left,mid); hctx.lineTo(w,mid); hctx.stroke(); hctx.setLineDash([]);
+    hctx.fillStyle=mut; hctx.fillText("12 mA",4,mid); hctx.fillText("12.5",4,mid-amp); hctx.fillText("11.5",4,mid+amp);
+    /* each bit is one stretch: 1 = 1200 Hz (fewer waves), 0 = 2200 Hz (more waves). Slowed way down. */
+    var bitW=(w-left)/6, shift=(hartT/18)%(bitW*BITS.length);
+    hctx.strokeStyle=state.hart?amber:c1; hctx.lineWidth=2.2; hctx.beginPath();
+    for(var x=left;x<=w;x++){
+      var pos=(x-left+shift), bi=Math.floor(pos/bitW)%BITS.length, b=BITS[bi], cyc=b?2:3.67;
+      var y = state.hart ? mid - amp*Math.sin(2*Math.PI*cyc*(pos/bitW)) : mid;
+      if(x===left) hctx.moveTo(x,y); else hctx.lineTo(x,y);
+    }
+    hctx.stroke();
+    if(state.hart){
+      hctx.fillStyle=c1; hctx.font='700 13px '+cssVar("--mono"); hctx.textAlign="center";
+      for(var k=-1;k<8;k++){ var start=left+k*bitW-(shift%bitW); var bi2=Math.floor((k*bitW+shift)/bitW); if(start+bitW/2<left||start+bitW/2>w) continue;
+        var bb=BITS[((bi2%BITS.length)+BITS.length)%BITS.length]; hctx.fillText(String(bb),start+bitW/2,h-26);
+        hctx.fillStyle=mut; hctx.font='500 10px '+cssVar("--sans"); hctx.fillText(bb?"1200 Hz":"2200 Hz",start+bitW/2,h-10); hctx.fillStyle=c1; hctx.font='700 13px '+cssVar("--mono"); }
+      hctx.textAlign="start";
+    } else { hctx.fillStyle=mut; hctx.fillText("Plain 4–20 mA: just the analog value",left+8,h-18); }
+    hctx.fillStyle=live; hctx.fillRect(left,mid-1,0,2);
+  }
+  requestAnimationFrame(drawHart);
+}
+function buildHart(){
+  var b=document.getElementById("hartBtn"); b.setAttribute("aria-pressed",String(state.hart)); b.textContent=state.hart?"HART signal on":"HART signal off";
+  document.getElementById("hartTbl").innerHTML='<tr class="th"><td></td><td>HART</td></tr>'+
+    '<tr><td>Stands for</td><td>Highway Addressable Remote Transducer</td></tr>'+
+    '<tr><td>How</td><td>A ±0.5 mA tone on top of the 4–20 mA: 1200 Hz for a 1, 2200 Hz for a 0 (Bell 202 FSK, like an old modem)</td></tr>'+
+    '<tr><td>Analog value</td><td>Unchanged: the tone averages to zero</td></tr>'+
+    '<tr><td>Carries</td><td>Tag name, range, units, diagnostics, extra readings (like temperature from a pressure transmitter), and re-ranging commands</td></tr>'+
+    '<tr><td>You need</td><td>A HART-capable input module or a handheld communicator, and at least about 250 Ω in the loop</td></tr>'+
+    '<tr><td>Speed</td><td>About 1200 bits per second: a few readings a second, not for fast control</td></tr>';
+  if(!hartRun){ hartRun=true; hartLast=null; requestAnimationFrame(drawHart); }
+}
+
+/* ---------- Page text ---------- */
+var TXT = {
+  sig:{title:"Analog signals and wiring", desc:"An analog signal is a number carried as a voltage or a current. 0–10 V is simple and common on benches and in drives. 4–20 mA is the standard for process instruments, because current survives long wires and noise and its 4 mA “live zero” shows when a wire breaks.",
+    tryIt:"<b>Try this:</b> move the process slider and compare the four wiring choices. In the 2-wire loop the same current flows through the supply, the transmitter and the PLC input. The transmitter doesn’t make power, it controls how much flows.",
+    note:"<p><b>2-wire (loop-powered) transmitters</b> take their power from the loop itself. They are the most common in process plants: two wires do everything.</p><p><b>4-wire transmitters</b> have their own power and drive the loop from their output. Common for analyzers and flowmeters that need more power.</p><p><b>The 250 Ω trick:</b> a voltage input can read 4–20 mA by measuring the voltage across a 250 Ω resistor: 4 mA × 250 Ω = 1 V, 20 mA × 250 Ω = 5 V. Many current input modules have this resistor inside.</p>"},
+  in:{title:"Analog input: tank level", desc:"A level transmitter turns 0–120 inches into a signal. The input module turns the signal into raw counts, and the program scales the counts back into inches.",
+    tryIt:"<b>Try this:</b> move the level and follow the chain: level, percent, signal, raw counts, scaled value. Switch PLCs: the raw counts change, the inches don’t. Then switch to the bench supply, like in the lab, and finally <b>cut the wire</b> in both 0–10 V and 4–20 mA."},
+  out:{title:"Analog output: VFD pump speed", desc:"The program wants the pump at some speed in hertz. It scales hertz into raw counts, the output module turns counts into a signal, and the VFD turns the signal back into a speed.",
+    tryIt:"<b>Try this:</b> set a speed and follow the chain backwards from the input page. Then cut the wire in both signal types and compare what the drive can tell."},
+  hart:{title:"HART: digital on top of analog", desc:"HART adds a small digital conversation on top of a normal 4–20 mA signal, on the same two wires. The PLC still reads the analog value; a HART-capable device can also talk to the transmitter.",
+    tryIt:"<b>Try this:</b> turn the HART signal on and off. The wiggle is the digital data: slower waves are 1s, faster waves are 0s. It goes up and down equally, so the average current, the analog value, doesn’t change.",
+    note:"<p>Standard analog input modules ignore HART completely, so it doesn’t hurt to have it on the loop. To use it you need a HART-capable input module, a HART multiplexer, or a handheld HART communicator clipped across the loop resistor.</p><p>Technicians use it most for setup and troubleshooting: reading the tag and range, checking diagnostics and re-ranging a transmitter without opening it up.</p>"}
+};
+
+/* ---------- Render ---------- */
+function render(){
+  var pg=state.page, p=P[state.plat];
+  document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plat===state.plat))});
+  document.querySelectorAll("#pageSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.page===pg))});
+  document.querySelectorAll("#sigSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.sig===state.sig))});
+  document.querySelectorAll("#srcSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.src===state.src))});
+  document.getElementById("sigTypeWrap").hidden = pg==="sig"||pg==="hart";
+  document.getElementById("pgSig").hidden = pg!=="sig";
+  document.getElementById("pgIO").hidden = !(pg==="in"||pg==="out");
+  document.getElementById("pgHart").hidden = pg!=="hart";
+  if(pg!=="hart") hartRun=false;
+  var t=TXT[pg];
+  document.getElementById("title").textContent=t.title;
+  document.getElementById("desc").textContent=t.desc;
+  document.getElementById("tryBox").innerHTML=t.tryIt;
+  document.getElementById("noteBox").innerHTML = (pg==="in"||pg==="out") ? p.note : t.note;
+  if(pg==="sig") buildWiring(); else if(pg==="hart") buildHart(); else renderIO();
+}
+document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.plat=b.dataset.plat; store.set("rl-plat",state.plat); render();});
+document.getElementById("pageSeg").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.page=b.dataset.page; store.set("an-page",state.page); state.broken=false; render();});
+document.getElementById("sigSeg").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.sig=b.dataset.sig; render();});
+document.getElementById("srcSeg").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.src=b.dataset.src; render();});
+document.getElementById("wireSeg").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.wire=b.dataset.w; buildWiring();});
+document.getElementById("pctRange").addEventListener("input",function(){ state.pct=+this.value; buildWiring(); });
+document.getElementById("ioRange").addEventListener("input",function(){
+  var v=+this.value;
+  if(state.page==="out") state.hz=v; else if(state.src==="tank") state.level=v; else state.bench[state.sig]=v;
+  renderIO();
+});
+document.getElementById("brkBtn").addEventListener("click",function(){ state.broken=!state.broken; renderIO(); });
+document.getElementById("hartBtn").addEventListener("click",function(){ state.hart=!state.hart; buildHart(); });
+render();
+})();
+</script>
+</body>
+</html>

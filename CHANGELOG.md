@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v2.2** Added the Analog I/O card
 - **v2.1** Sinking & Sourcing card: v1.3
 - **v2.0** Sinking & Sourcing card: v1.2, mentions sensors
 - **v1.9** Added the Sinking & Sourcing card
@@ -62,3 +63,7 @@ Called "Timers & Addressing" through v1.7.
 - **v1.2** New Sensors section. PNP and NPN sensors wired with real wire colors into the matching input, with diffuse or through-beam sensing, light-on or dark-on, 3-wire or 4-wire (complementary WHT output), and correct or mistake wiring. Wire colors reference with M12 pin numbers and 3-wire notes. Interactive sensitivity setting: mark the false-positive and false-negative points, then set the midpoint
 - **v1.1** Relay output: the relay coil and its link to the contact light up while the output bit is on. "Watch the words" note explains that M-switching comes from German *Masse* (ground)
 - **v1.0** First version. Basics: four battery, switch and bulb circuits, two wired correctly and two not. Inputs: sinking, sourcing and AC. Outputs: sourcing (PNP), sinking (NPN), triac and relay (24 VDC or 120 VAC). Wiring diagrams with animated current (back and forth on AC), a correct/mistake wiring choice on every DC page, and a table of voltage, current, LED and bit. Generic, not tied to a PLC brand
+
+## Analog I/O (`analog/`)
+
+- **v1.0** First version, for all five PLCs. Wiring: 0–10 V, 2-wire and 4-wire 4–20 mA, and the 250 Ω / 1–5 V trick, with animated current and a 0–10 V vs 4–20 mA comparison. Input: tank level (0–120 in) from a transmitter, bench supply or loop calibrator, through signal, raw counts and the PLC's scaling instruction (SCP, NORM_X/SCALE_X, Math), with a graph and the same signal on all five PLCs. Output: VFD pump speed (0–60 Hz) the other way. Cut-the-wire button for broken-wire detection. HART page with the FSK signal on top of 4–20 mA
