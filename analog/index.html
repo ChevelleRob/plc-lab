@@ -219,7 +219,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.0</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.1</span></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -315,7 +315,7 @@ var P = {
     outR:{V:{s0:0,s1:10,r0:0,r1:32764}, mA:{s0:4,s1:20,r0:6242,r1:31208}},
     inAddr:"I:1.0", outAddr:"O:1.0", inEng:"N7:10", outEng:"N7:20", style:"scp",
     brk:"The NIO4V just reads the low current. Add a compare in the program: raw below 2949 (3.6 mA) means a broken wire or failed transmitter.",
-    note:"<p><b>SLC 500, 1746-NIO4V:</b> two inputs (voltage or current, set per channel with a switch) and two <b>voltage-only</b> outputs. The inputs read −32768 to 32767 for ±10 V, so 0–10 V is 0–32767. In current mode ±20 mA reads ±16384, so 4–20 mA is 3277–16384. Outputs: 0–10 V is 0–32764. For 4–20 mA outputs you would use a 1746-NIO4I or NO4I, where 4–20 mA is 6242–31208.</p><p><b>SCP</b> (Scale with Parameters) needs an SLC 5/03 or newer. Older programs scale with SCL.</p>" },
+    note:"<p><b>SLC 500, 1746-NIO4V:</b> two inputs (voltage or current, set per channel with a switch) and two <b>voltage-only</b> outputs. The inputs read −32768 to 32767 for ±10 V, so 0–10 V is 0–32767. In current mode ±20 mA reads ±16384, so 4–20 mA is 3277–16384. Outputs: 0–10 V is 0–32764. You can write values up to 32767, but the output ignores the lowest 2 bits, so anything above 32764 gives the same 10 V. For 4–20 mA outputs you would use a 1746-NIO4I or NO4I, where 4–20 mA is 6242–31208.</p><p><b>SCP</b> (Scale with Parameters) needs an SLC 5/03 or newer. Older programs scale with SCL.</p>" },
   clx:{ name:"CompactLogix", inMod:"1769-IF4", outMod:{V:"1769-OF4", mA:"1769-OF4"},
     inR:{V:{s0:0,s1:10,r0:0,r1:10000,lo:-500,hi:10500}, mA:{s0:4,s1:20,r0:4000,r1:20000,lo:3200,hi:21000}},
     outR:{V:{s0:0,s1:10,r0:0,r1:10000}, mA:{s0:4,s1:20,r0:4000,r1:20000}},
