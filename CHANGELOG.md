@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v1.9** Added the Sinking & Sourcing card
 - **v1.8** Compare card: v1.1
 - **v1.7** Added the Compare card
 - **v1.6** Logic card: v1.4
@@ -52,3 +53,7 @@ Called "Timers & Addressing" through v1.7.
 
 - **v1.1** Added the range compare as a seventh, full-width button: LIM on SLC 500 and CompactLogix, IN_RANGE on S7, and two compare contacts in series on CLICK and DL06 (DL06 uses < High + 1). Range choices 2 to 5, 3 to 7 and 5 to 8, with Low and High marked on the number line and the timing diagram
 - **v1.0** First version: GRT, GEQ, LES, LEQ, EQU and NEQ (and each PLC's symbols) comparing an up/down counter's count with 3, 5 or 8. Live ladder with the counter and the compare rung, number line with the true range shaded, results table and timing diagram. SLC 500 and CompactLogix compare boxes; S7, CLICK and DL06 compare contacts. DL06 builds > and ≤ from ≥ and < with the next value up
+
+## Sinking & Sourcing (`sink-source/`)
+
+- **v1.0** First version. Basics: four battery, switch and bulb circuits, two wired correctly and two not. Inputs: sinking, sourcing and AC. Outputs: sourcing (PNP), sinking (NPN), triac and relay (24 VDC or 120 VAC). Wiring diagrams with animated current (back and forth on AC), a correct/mistake wiring choice on every DC page, and a table of voltage, current, LED and bit. Generic, not tied to a PLC brand

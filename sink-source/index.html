@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab: sinking and sourcing I/O wiring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --wire:#8A939A; --live:#178F4C; --liveglow:rgba(23,143,76,.22);
+  --amber:#B97C00; --red:#C13D2B; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5; --c2:#9A6400; --c2bg:#F6E7C8; --c3:#177A45; --c3bg:#D6EEDF; --c4:#7A3C99; --c4bg:#EBDDF2;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+    --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+  --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+/* Header: a nameplate, like an engraved panel tag */
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand h1 a{color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:5px;padding:4px 0}
+.brand h1 a::before{content:"\2039";opacity:.6;font-weight:600}
+.brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+.plats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:10px}
+.plats button{grid-column:span 2;min-width:0;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 4px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plats button:nth-child(n+4){grid-column:span 3}
+.plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+h3{font-size:17px;margin:20px 0 6px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.seg{display:flex;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-weight:600;cursor:pointer;border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+
+/* Ladder: the one bold element */
+.ladder{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;margin-top:14px;padding:6px 2px}
+.ladder svg{display:block;width:100%;height:auto}
+.ladder .rail{stroke:var(--live);stroke-width:4}
+.ladder .w{stroke:var(--wire);stroke-width:2.5;fill:none;transition:stroke .08s}
+.ladder .w.on{stroke:var(--live);stroke-width:3.5;filter:drop-shadow(0 0 3px var(--liveglow))}
+.ladder .cb{stroke:var(--ink);stroke-width:2.5}
+.ladder .cfill{fill:transparent}
+.ladder .cfill.on{fill:var(--live)}
+.ladder .coil{fill:none;stroke:var(--ink);stroke-width:2.5}
+.ladder .coil.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .box{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder text{fill:var(--ink);font-family:var(--sans);font-size:12px}
+.ladder .addr{font-family:var(--mono);font-size:10.5px;fill:var(--c1)}
+.ladder .tag{font-size:11px;fill:var(--muted)}
+.ladder .big{font-weight:700;font-size:15px}
+.ladder .val{font-family:var(--mono);font-size:12px;font-weight:700}
+.ladder .ind{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .ind.on{fill:var(--live);stroke:var(--live)}
+.ladder .indt{font-size:10px;font-weight:700}
+.ladder .indt.on{fill:#fff}
+.lamp{fill:var(--surface2);stroke:var(--ink);stroke-width:1.5}
+.lamp.on{fill:var(--live);filter:drop-shadow(0 0 6px var(--live))}
+
+/* Controls */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);color:var(--onpanel);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 12px rgba(0,0,0,.25)}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inds{display:flex;align-items:center;gap:14px;min-width:0}
+.pilot{display:flex;align-items:center;gap:8px}
+.pilot b{display:block;font-size:14px}
+.pilot small{display:block;font-family:var(--mono);font-size:11px;opacity:.75}
+.plamp{width:40px;height:40px;border-radius:50%;flex:none;background:#3A4650;box-shadow:inset 0 0 0 3px rgba(255,255,255,.15);transition:background .08s}
+.plamp.on{background:var(--live);box-shadow:0 0 16px var(--live)}
+.bits{display:flex;gap:8px}
+.bl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
+.bl i{width:16px;height:16px;border-radius:50%;background:#3A4650;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+.bl i.on{background:var(--live);box-shadow:0 0 8px var(--live)}
+.acts{display:flex;gap:14px;flex:none}
+.bar .switch,.bar .pb{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .knob{width:44px;height:44px;background:#1A2228}
+.bar .pb .cap{width:44px;height:44px}
+.bar .switch b,.bar .pb b{font-size:13px}
+.bar .switch small,.bar .pb small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.switch{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left}
+.knob{width:46px;height:46px;border-radius:50%;background:var(--panel);position:relative;flex:none;box-shadow:inset 0 0 0 3px var(--wire)}
+.knob::after{content:"";position:absolute;left:50%;top:7px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:var(--onpanel);transform:rotate(-40deg);transform-origin:50% 16px;transition:transform .15s}
+.switch[aria-pressed="true"] .knob::after{transform:rotate(40deg)}
+.switch[aria-pressed="true"] .knob{box-shadow:inset 0 0 0 3px var(--live)}
+.switch b{display:block;font-size:16px}
+.switch small{color:var(--muted);font-size:13px}
+.pb{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;user-select:none;-webkit-user-select:none;touch-action:none}
+.pb .cap{width:46px;height:46px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 4px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb.held .cap{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb b{display:block;font-size:16px}
+.pb small{color:var(--muted);font-size:13px}
+
+.status{width:100%;border-collapse:collapse;margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;font-size:15px}
+.status td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+.status tr:first-child td{border-top:0}
+.status td:first-child{font-family:var(--mono);font-size:13px;color:var(--c1);white-space:nowrap}
+.status td.v{font-family:var(--mono);font-weight:700;white-space:nowrap;width:5.5em}
+.bit{display:inline-block;min-width:2.2em;text-align:center;border-radius:4px;padding:0 4px;background:var(--surface2);color:var(--muted)}
+.bit.on{background:var(--live);color:#fff}
+.status td.m{color:var(--muted);font-size:14px}
+
+.chartbox{margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.chartbox canvas{display:block;width:100%;height:210px}
+.note{margin-top:14px;padding:12px 14px;border-left:4px solid var(--amber);background:var(--surface);border-radius:0 8px 8px 0}
+.note p{margin:4px 0}
+.try{margin-top:12px;padding:12px 14px;border-left:4px solid var(--live);background:var(--surface);border-radius:0 8px 8px 0}
+
+.qtext code,.qexp code,.note code,.try code,p code{font-family:var(--mono);font-size:.9em;color:var(--c1)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* Counters: momentary pushbuttons, one cap color per job */
+.pb .cap,.pb.held .cap{background:var(--cap,var(--red))}
+.pb .cap{box-shadow:0 4px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.held .cap{box-shadow:0 1px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.k-up{--cap:var(--live)} .pb.k-dn{--cap:var(--amber)} .pb.k-rs{--cap:var(--red)} .pb.k-ld{--cap:var(--c1)}
+.bar .acts{gap:10px}
+.bar .inds{gap:10px}
+@media (max-width:400px){ .pilot small{display:none} .bar .pb b{font-size:12px} }
+
+/* Logic: six type buttons in a 3 x 2 grid */
+.plats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.plats button,.plats button:nth-child(n+4){grid-column:auto}
+.pb.k-st{--cap:var(--live)} .pb.k-sp{--cap:var(--red)}
+.bar .switch{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .switch small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+/* Gate symbol and field wiring */
+.ladder .gate{fill:var(--surface2);stroke:var(--ink);stroke-width:2.5;transition:fill .08s,stroke .08s}
+.ladder .gate.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .gl{font-family:var(--mono);font-weight:700;font-size:15px;fill:var(--ink)}
+.ladder .gname{font-weight:700;font-size:13px;fill:var(--muted)}
+.ladder .term{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .inbox{fill:var(--surface2);stroke:var(--line);stroke-width:1.5}
+.ladder .pbbar{transition:transform .06s}
+/* Memory page */
+.seg button{white-space:nowrap}
+#memSeg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+#memSeg button:nth-child(3){border-right:0}
+#memSeg button{padding:9px 2px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:400px){#memSeg button{font-size:14px}}
+@media (max-width:340px){#memSeg button{font-size:13px;letter-spacing:-.01em}}
+#memSeg button.wide{grid-column:1/-1;border-top:1.5px solid var(--line);border-right:0}
+.pwr{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.pwr .next:disabled{opacity:.5;cursor:default}
+.pwr .next{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer}
+.pwr span{font-size:15px;flex:1 1 200px}
+.ladder .rail[data-sig]{stroke:var(--wire)} .ladder .rail[data-sig].on{stroke:var(--live)}
+.ladder .rl{font-family:var(--mono);font-weight:700;font-size:12px;fill:var(--muted)}
+.ladder .rcoil{fill:var(--surface);stroke:var(--ink);stroke-width:2.5}
+.ladder .rcoil.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .pl{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder .pl.on{fill:var(--amber);stroke:var(--amber);filter:drop-shadow(0 0 6px var(--amber))}
+/* Truth table */
+.tt td{text-align:center;font-family:var(--mono)}
+.tt td:first-child{color:var(--ink)}
+.tt tr.th td{font-family:var(--sans);font-weight:600;background:var(--surface2);color:var(--ink)}
+.tt tr.cur td{background:var(--liveglow)}
+.tt tr.cur td:first-child{box-shadow:inset 4px 0 0 var(--live)}
+
+/* Sinking & sourcing: wiring diagrams */
+.ladder .wr{stroke:var(--wire);stroke-width:2.5;fill:none;stroke-linecap:round}
+.ladder .flow{stroke:var(--live);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:7 7;animation:flow .7s linear infinite}
+.ladder .flow.ac{stroke:var(--amber);animation:flowac .5s ease-in-out infinite alternate}
+@keyframes flow{to{stroke-dashoffset:-14}}
+@keyframes flowac{from{stroke-dashoffset:0}to{stroke-dashoffset:-14}}
+.ladder .blade{stroke:var(--ink);stroke-width:3;stroke-linecap:round}
+.ladder .cell{stroke:var(--ink);stroke-width:2.5}
+.ladder .bulb{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .bulb.on{fill:var(--amber);stroke:var(--amber);filter:drop-shadow(0 0 7px var(--amber))}
+.ladder .bx{stroke:var(--ink);stroke-width:1.5}
+.ladder .psu{fill:var(--surface2);stroke:var(--line);stroke-width:2}
+.ladder .mod{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder .res{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .led{fill:#3A4650;stroke:var(--ink);stroke-width:1.5}
+.ladder .led.on{fill:var(--live);stroke:var(--live);filter:drop-shadow(0 0 5px var(--live))}
+.ladder .plbl{font-size:12px;font-weight:700;fill:var(--ink)}
+.ladder .pv{font-family:var(--mono);font-size:11px;font-weight:700;fill:var(--c1)}
+.ladder .pm{font-family:var(--mono);font-size:15px;font-weight:700;fill:var(--ink)}
+.ladder .tl{font-family:var(--mono);font-size:11px;font-weight:700;fill:var(--c1)}
+.result{margin:10px 0 0;padding:10px 12px;border-radius:8px;background:var(--surface);border:1.5px solid var(--line);font-size:15px}
+.result.ok{border-color:var(--live)}
+.result.bad{border-color:var(--red);color:var(--ink)}
+.tt td{text-align:left;font-family:var(--sans)}
+.tt td:last-child{font-family:var(--mono);font-weight:700;text-align:right}
+/* Basics: four little circuits */
+.quad{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.qcard{margin:0;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:6px 6px 10px}
+.qcard svg{display:block;width:100%;height:auto}
+.qcard.ok{border-color:color-mix(in srgb,var(--live) 60%,var(--line))}
+.qcard.bad{border-color:color-mix(in srgb,var(--red) 50%,var(--line))}
+.qcard figcaption{font-size:14px;line-height:1.3;padding:0 4px}
+.qcard figcaption b{display:block}
+.qcard.ok figcaption span{color:var(--live);font-weight:700}
+.qcard.bad figcaption span{color:var(--red);font-weight:700}
+.qcard .term{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.qcard .wr{stroke:var(--wire);stroke-width:2.5;fill:none}
+.qcard .flow{stroke:var(--live);stroke-width:4;fill:none;stroke-dasharray:7 7;animation:flow .7s linear infinite}
+.qcard .blade{stroke:var(--ink);stroke-width:3;stroke-linecap:round}
+.qcard .cell{stroke:var(--ink);stroke-width:2.5}
+.qcard .bulb{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.qcard .bulb.on{fill:var(--amber);stroke:var(--amber);filter:drop-shadow(0 0 7px var(--amber))}
+.qcard .bx{stroke:var(--ink);stroke-width:1.5}
+.qcard .tag{font-size:11px;fill:var(--muted)}
+.qcard .pm{font-family:var(--mono);font-size:14px;font-weight:700;fill:var(--ink)}
+.bar .cnt{font-family:var(--mono);font-size:18px;line-height:16px;text-align:center}
+@media (prefers-reduced-motion: reduce){.ladder .flow,.qcard .flow{animation:none;stroke-dasharray:none}}
+</style>
+</head>
+<body class="has-bar">
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Sinking &amp; sourcing</span><span class="ver">v1.0</span></div>
+    <div class="plats" role="group" aria-label="Section">
+      <button data-sec="basics">Basics</button>
+      <button data-sec="in">Inputs</button>
+      <button data-sec="out">Outputs</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div id="subWrap">
+      <div class="lbl" id="subLbl">Module type</div>
+      <div class="seg" id="subSeg" role="group" aria-label="Module type"></div>
+    </div>
+    <div id="optWrap" hidden>
+      <div class="lbl" id="optLbl"></div>
+      <div class="seg" id="optSeg" role="group"></div>
+    </div>
+    <h2 id="title"></h2>
+    <p id="desc"></p>
+
+    <div id="basics" class="quad" hidden></div>
+    <div id="diagWrap">
+      <div class="lbl">Wiring diagram</div>
+      <div class="ladder" id="diag" aria-label="Wiring diagram"></div>
+      <p class="result" id="result" aria-live="polite"></p>
+      <div class="lbl">What is happening</div>
+      <table class="status tt" id="tbl"></table>
+    </div>
+
+    <div class="try" id="tryBox"></div>
+    <div class="note" id="noteBox"></div>
+  </section>
+</main>
+
+<div class="bar" id="ctlBar">
+  <div class="in">
+    <div class="inds"><div class="bits" id="pBits" aria-label="Indicators"></div></div>
+    <div class="acts" id="acts"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var store = {
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var SUBS = {in:["sink","source","ac"], out:["source","sink","triac","relay"]};
+var SUBLBL = {in:{sink:"Sinking",source:"Sourcing",ac:"AC"}, out:{source:"Sourcing",sink:"Sinking",triac:"Triac (AC)",relay:"Relay"}};
+var state = {
+  sec: store.get("ss-sec") || "basics",
+  sub: {in: store.get("ss-in") || "sink", out: store.get("ss-out") || "source"},
+  mistake:false, relayAC:false, closed:false, bit:false
+};
+if(["basics","in","out"].indexOf(state.sec)<0) state.sec="basics";
+if(SUBS.in.indexOf(state.sub.in)<0) state.sub.in="sink";
+if(SUBS.out.indexOf(state.sub.out)<0) state.sub.out="source";
+function cur(){ return state.sec==="basics" ? "" : state.sub[state.sec] }
+function isAC(){ var k=cur(); return (state.sec==="in"&&k==="ac") || (state.sec==="out"&&(k==="triac"||(k==="relay"&&state.relayAC))) }
+function hasMistake(){ var k=cur(); return state.sec!=="basics" && k!=="ac" && k!=="triac" && k!=="relay" }
+
+/* ---------- Text for each page ---------- */
+var TXT = {
+  basics:{title:"Battery, switch and bulb",
+    desc:"Each device has one end tied to a rail. A device on the + rail sources current to the rest of the circuit; a device on the − rail sinks it back to the battery. Current needs a path from + to − that goes through both devices.",
+    tryIt:"<b>Try this:</b> close the switches. Only the two circuits with one sourcing and one sinking device light up. In the other two both devices hang off the same rail, so there is no voltage across the bulb.",
+    note:"<p><b>The rule for PLC wiring:</b> the field device and the module are opposites. A sourcing device (switch on the + side, PNP sensor) needs a sinking input. A sinking device (switch on the − side, NPN sensor) needs a sourcing input. Outputs work the same way with the load.</p>"},
+  in_sink:{title:"Sinking input (DC)",
+    desc:"Current flows into the input terminal. The module’s COM goes to 0 V, and the device feeds +24 V to the terminal, so the device must be sourcing: a switch on the + side, or a PNP sensor.",
+    good:"Current path: + → switch → IN 0 → input circuit → COM → −",
+    bad:"No current: the switch is on the 0 V side, and COM is also at 0 V. Both ends of the input circuit sit at 0 V, so there is 0 V across it. Two sinking devices.",
+    tryIt:"<b>Try this:</b> close the switch and follow the current into IN 0 and out of COM. Then pick <b>Mistake</b>: the switch moves to the 0 V side. Close it again. The input never turns on.",
+    note:"<p><b>Sinking input:</b> COM to 0 V (DC−). Pairs with sourcing devices: switches on the + side and PNP sensors.</p>"},
+  in_source:{title:"Sourcing input (DC)",
+    desc:"Current flows out of the input terminal. The module’s COM goes to +24 V, and the device connects the terminal to 0 V, so the device must be sinking: a switch on the 0 V side, or an NPN sensor.",
+    good:"Current path: + → COM → input circuit → IN 0 → switch → −",
+    bad:"No current: the switch is on the +24 V side, and COM is also at +24 V. Both ends of the input circuit sit at +24 V, so there is 0 V across it. Two sourcing devices.",
+    tryIt:"<b>Try this:</b> close the switch. Current comes in at COM and leaves through IN 0, the opposite direction from a sinking input. Then pick <b>Mistake</b> and close it again.",
+    note:"<p><b>Sourcing input:</b> COM to +24 V. Pairs with sinking devices: switches on the 0 V side and NPN sensors.</p>"},
+  in_ac:{title:"AC input (120 VAC)",
+    desc:"The switch connects L1 to the input terminal, and COM goes to N (neutral). AC has no + and −, so sinking and sourcing don’t apply: the current reverses 60 times a second.",
+    good:"Current path: L1 → switch → IN 0 → input circuit → COM → N, reversing every half cycle",
+    tryIt:"<b>Try this:</b> close the switch and watch the current move back and forth.",
+    note:"<p><b>AC inputs</b> filter the signal, so they react more slowly than DC inputs, about 10 to 20 ms. Watch out for 2-wire AC sensors and lighted switches: their small leakage current can be enough to turn an input on, which is fixed with a load resistor across the input.</p><p>Always switch L1 (the hot side), not N.</p>"},
+  out_source:{title:"Sourcing output (DC, PNP)",
+    desc:"The module switches +24 V out to the load. The lamp’s other side goes to 0 V, so the load is wired sinking. Inside, a PNP transistor does the switching.",
+    good:"Current path: + → +V → transistor → OUT 0 → lamp → −",
+    bad:"No current: the lamp’s other side is tied to +24 V. When the output turns on, OUT 0 is also at +24 V, so there is 0 V across the lamp. The LED shows the bit is on, but nothing lights. Two sourcing devices.",
+    tryIt:"<b>Try this:</b> turn the output bit on. Then pick <b>Mistake</b> and do it again. The module’s LED still comes on: it shows the bit, not the lamp. That is a classic troubleshooting trap.",
+    note:"<p><b>Sourcing output:</b> switches the + side of the load. Wire the load’s other end to 0 V. Very common on machines, and the usual choice in Europe.</p>"},
+  out_sink:{title:"Sinking output (DC, NPN)",
+    desc:"The load’s other side goes to +24 V, and the module connects OUT 0 to 0 V to turn it on. The load is wired sourcing. Inside, an NPN transistor does the switching.",
+    good:"Current path: + → lamp → OUT 0 → transistor → COM → −",
+    bad:"No current: the lamp’s other side is tied to 0 V. When the output turns on, OUT 0 is also at 0 V, so there is 0 V across the lamp. The LED is on, the lamp is not. Two sinking devices.",
+    tryIt:"<b>Try this:</b> turn the output bit on and follow the current into OUT 0. Then pick <b>Mistake</b> and try again.",
+    note:"<p><b>Sinking output:</b> switches the 0 V side of the load. Wire the load’s other end to +24 V.</p>"},
+  out_triac:{title:"Triac output (AC)",
+    desc:"A triac is a solid-state AC switch. L1 feeds the module’s VAC terminal, the triac switches it to OUT 0, and the lamp’s other side goes to N.",
+    good:"Current path: L1 → VAC → triac → OUT 0 → lamp → N, reversing every half cycle",
+    tryIt:"<b>Try this:</b> turn the output bit on and watch the alternating current.",
+    note:"<p><b>Triac outputs switch AC only.</b> A triac turns off when the current passes through zero, which AC does 120 times a second. On DC the current never reaches zero, so the output would not turn off.</p><p><b>Leakage:</b> an off triac still lets a few milliamps through. That is enough to make a neon lamp glow, hold in a small relay, or turn on another PLC’s input. A load (bleeder) resistor across the load fixes it.</p><p>No moving parts, so triacs switch fast and don’t wear out.</p>"},
+  out_relay:{title:"Relay output",
+    desc:"Inside the module the output bit drives a small relay. Its contact is a dry contact: it just closes, so you can wire it into DC or AC. Pick a supply to see both.",
+    good:"Current path: supply → COM → relay contact → OUT 0 → lamp → back to the supply",
+    tryIt:"<b>Try this:</b> turn the output bit on with 24 VDC, then switch the supply to 120 VAC and do it again. Same module, same contact.",
+    note:"<p><b>Relay outputs</b> switch AC or DC, at any voltage within the contact’s rating. Points that share a COM share one supply, so put different voltages on different commons.</p><p>Trade-offs: contacts take about 10 ms to move and wear out after a limited number of operations, so relays are a poor choice for fast cycling. They are a great choice for mixed voltages and small loads.</p>"}
+};
+var TERMS = "<p><b>Watch the words.</b> Manufacturers don’t all use “sinking” and “sourcing” the same way. Some label a module by the device it expects, and many European manuals say <b>P-switching</b> (PNP, sourcing) and <b>M-switching</b> (NPN, sinking) instead. When in doubt, read the wiring diagram in the module’s manual and check where COM goes.</p>";
+
+/* ---------- Drawing helpers ---------- */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function line(x1,y1,x2,y2,cls){return '<line class="'+(cls||"wr")+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>'}
+function poly(pts,cls){return '<polyline class="'+cls+'" points="'+pts.map(function(p){return p.join(",")}).join(" ")+'"/>'}
+function term(x,y){return '<circle class="term" cx="'+x+'" cy="'+y+'" r="4"/>'}
+function txt(x,y,t,cls,anchor){return '<text class="'+(cls||"tag")+'" x="'+x+'" y="'+y+'"'+(anchor?' text-anchor="'+anchor+'"':'')+'>'+t+'</text>'}
+/* horizontal knife switch between x1 and x2 */
+function hSwitch(x1,x2,y,closed){
+  var bx = closed ? x2 : x2-6, by = closed ? y : y-16;
+  return term(x1,y)+term(x2,y)+'<line class="blade" x1="'+x1+'" y1="'+y+'" x2="'+bx+'" y2="'+by+'"/>';
+}
+/* vertical knife switch between y1 (top) and y2 */
+function vSwitch(x,y1,y2,closed){
+  var bx = closed ? x : x+16, by = closed ? y2 : y2-6;
+  return term(x,y1)+term(x,y2)+'<line class="blade" x1="'+x+'" y1="'+y1+'" x2="'+bx+'" y2="'+by+'"/>';
+}
+function lamp(cx,cy,on,horiz){
+  var r=13, d=r*0.7;
+  return '<circle class="bulb'+(on?' on':'')+'" cx="'+cx+'" cy="'+cy+'" r="'+r+'"/>'+
+    '<line class="bx" x1="'+(cx-d)+'" y1="'+(cy-d)+'" x2="'+(cx+d)+'" y2="'+(cy+d)+'"/><line class="bx" x1="'+(cx-d)+'" y1="'+(cy+d)+'" x2="'+(cx+d)+'" y2="'+(cy-d)+'"/>'+
+    (horiz ? line(cx-25,cy,cx-r,cy)+line(cx+r,cy,cx+25,cy) : line(cx,cy-25,cx,cy-r)+line(cx,cy+r,cx,cy+25));
+}
+function battery(x,yTop,yBot,label){
+  var m=(yTop+yBot)/2;
+  return line(x,yTop,x,m-6)+line(x,m+6,x,yBot)+
+    '<line class="cell" x1="'+(x-12)+'" y1="'+(m-6)+'" x2="'+(x+12)+'" y2="'+(m-6)+'"/>'+
+    '<line class="cell" x1="'+(x-6)+'" y1="'+(m+6)+'" x2="'+(x+6)+'" y2="'+(m+6)+'" style="stroke-width:4"/>'+
+    txt(x+16,m-10,"+","pm")+txt(x+16,m+20,"−","pm")+txt(x-16,m+4,label,"tag","end");
+}
+
+/* ---------- Basics: four battery circuits ---------- */
+var BASICS = [
+  {sw:"top", bulb:"bot", name:"Sourcing switch, sinking bulb"},
+  {sw:"bot", bulb:"top", name:"Sinking switch, sourcing bulb"},
+  {sw:"bot", bulb:"bot", name:"Sinking switch, sinking bulb"},
+  {sw:"top", bulb:"top", name:"Sourcing switch, sourcing bulb"}
+];
+function buildBasics(){
+  var h="";
+  BASICS.forEach(function(c){
+    var T=26, B=134, M=80, xs=82, xb=136, ok=c.sw!==c.bulb, on=ok&&state.closed, o="";
+    o+=battery(32,T,B,"9 V")+line(32,T,c.sw==="top"||c.bulb==="top"?Math.max(c.sw==="top"?xs:0,c.bulb==="top"?xb:0):40,T)+
+       line(32,B,c.sw==="bot"||c.bulb==="bot"?Math.max(c.sw==="bot"?xs:0,c.bulb==="bot"?xb:0):40,B)+
+       line(xs,M,xb,M);
+    /* switch from its rail to the middle node */
+    o+= c.sw==="top" ? vSwitch(xs,T,M,state.closed) : vSwitch(xs,M,B,state.closed);
+    /* bulb from its rail to the middle node */
+    var by=c.bulb==="top"?(T+M)/2:(M+B)/2;
+    o+=lamp(xb,by,on,false);
+    if(on){
+      /* conventional current: + rail, down through the top device, across, down through the bottom device, back to - */
+      var top=c.sw==="top"?xs:xb, bot=c.sw==="top"?xb:xs;
+      o+=poly([[32,T],[top,T],[top,T+2]],"flow")+poly([[top,M],[bot,M]],"flow")+poly([[bot,B],[32,B]],"flow");
+    }
+    h+='<figure class="qcard'+(ok?' ok':' bad')+'"><svg viewBox="0 0 170 150" role="img" aria-label="'+c.name+'">'+o+'</svg>'+
+       '<figcaption><b>'+c.name+'</b><span>'+(ok?(on?"✓ Lit":"✓ Works when closed"):"✗ Never lights")+'</span></figcaption></figure>';
+  });
+  document.getElementById("basics").innerHTML=h;
+}
+
+/* ---------- Module diagrams ---------- */
+/* Layout: supply on the left (terminals at x=84), device in the middle row (y=115), module on the right (terminals at x=236).
+   Top rail y=50 (+ or L1), bottom rail y=180 (0 V or N). */
+var X0=84, XM=236, YT=50, YM=115, YB=180, D1=140, D2=190, XR=112, XI=290;
+function model(){
+  var sec=state.sec, k=cur(), ac=isAC(), m=state.mistake&&hasMistake(), r={};
+  if(sec==="in"){
+    var comTop = k==="source";                  /* sourcing input: COM to +24 V */
+    var devTop = k==="source" ? m : !m;         /* correct device: opposite of the module */
+    r.comTop=comTop; r.devTop=devTop;
+    r.current = state.closed && devTop!==comTop;
+    r.vAcross = r.current ? (ac?"120 VAC":"24 V") : "0 V";
+  } else {
+    var modTop = k!=="sink";                    /* sourcing, triac, relay switch the top rail; sinking switches the bottom */
+    var loadTop = k==="sink" ? !m : m;          /* where the lamp's other end goes */
+    r.modTop=modTop; r.loadTop=loadTop;
+    r.current = state.bit && modTop!==loadTop;
+    r.vAcross = r.current ? (ac?"120 VAC":"24 V") : "0 V";
+  }
+  r.ac=ac; r.mistake=m;
+  return r;
+}
+function buildDiag(){
+  var sec=state.sec, k=cur(), md=model(), ac=md.ac, o="", fl=ac?"flow ac":"flow";
+  var topN = ac?"L1":"+", botN = ac?"N":"−";
+  var sup = sec==="out"&&k==="relay" ? (state.relayAC?"120 VAC":"24 VDC") : (ac?"120 VAC":"24 VDC");
+  /* power supply */
+  o+='<rect class="psu" x="8" y="24" width="76" height="182" rx="6"/>'+txt(46,108,"Power","plbl","middle")+txt(46,124,"supply","plbl","middle")+txt(46,144,sup,"pv","middle")+
+     term(X0,YT)+term(X0,YB)+txt(X0-10,YT+4,topN,"pm","end")+txt(X0-10,YB+4,botN,"pm","end");
+  /* module */
+  var mname = sec==="in" ? (k==="ac"?"AC input":(k==="sink"?"Sinking":"Sourcing")+" input") : ({source:"Sourcing output",sink:"Sinking output",triac:"Triac output",relay:"Relay output"})[k];
+  o+='<rect class="mod" x="'+XM+'" y="24" width="116" height="182" rx="6"/>'+txt(300,40,mname,"plbl","middle");
+  var led = sec==="in" ? md.current : state.bit;
+  o+='<circle class="led'+(led?' on':'')+'" cx="334" cy="'+YM+'" r="7"/>'+txt(334,YM+22,"LED 0","tag","middle");
+
+  if(sec==="in"){
+    var comY = md.comTop?YT:YB, devY = md.devTop?YT:YB;
+    o+=term(XM,YM)+term(XM,comY)+txt(XM+8,YM-6,"IN 0","tl")+txt(XM+8,comY+16,"COM","tl");
+    /* input circuit inside the module: resistor + optocoupler LED between IN 0 and COM */
+    var a=Math.min(YM,comY), b=Math.max(YM,comY), mid=(a+b)/2;
+    o+=line(XM,YM,XI,YM)+line(XM,comY,XI,comY)+line(XI,a,XI,mid-16)+line(XI,mid+16,XI,b)+
+       '<rect class="res" x="'+(XI-6)+'" y="'+(mid-16)+'" width="12" height="32" rx="2"/>'+txt(XI+10,mid-2,"input","tag")+txt(XI+10,mid+11,"circuit","tag");
+    /* supply rails */
+    o+=line(X0,YT,md.comTop?XM:XR,YT)+line(X0,YB,md.comTop?XR:XM,YB);
+    /* field switch: rail -> XR -> switch -> IN 0 */
+    o+=line(XR,devY,XR,YM)+line(XR,YM,D1,YM)+hSwitch(D1,D2,YM,state.closed)+line(D2,YM,XM,YM)+
+       txt((D1+D2)/2,YM+26,"Switch","tag","middle")+txt((D1+D2)/2,YM+40,md.devTop?"(+ side: sourcing)":"(0 V side: sinking)","tag","middle");
+    if(ac){ o=o.replace("(+ side: sourcing)","(on L1)"); }
+    if(md.current){
+      if(!md.comTop){ /* sinking input: + -> switch -> IN -> circuit -> COM -> - */
+        o+=poly([[X0,YT],[XR,YT],[XR,YM],[D1,YM]],fl)+poly([[D2,YM],[XM,YM],[XI,YM],[XI,YB],[XM,YB],[X0,YB]],fl);
+      } else {       /* sourcing input: + -> COM -> circuit -> IN -> switch -> - */
+        o+=poly([[X0,YT],[XM,YT],[XI,YT],[XI,YM],[XM,YM],[D2,YM]],fl)+poly([[D1,YM],[XR,YM],[XR,YB],[X0,YB]],fl);
+      }
+    }
+  } else {
+    var swY = md.modTop?YT:YB, loadY = md.loadTop?YT:YB;
+    var sw={source:"PNP",sink:"NPN",triac:"Triac",relay:"Contact"}[k];
+    var stN = k==="source"?"+V" : k==="sink"?"COM" : k==="triac"?"VAC" : "COM";
+    o+=term(XM,YM)+term(XM,swY)+txt(XM+8,YM-6,"OUT 0","tl")+txt(XM+8,swY+16,stN,"tl");
+    /* output switch inside the module between OUT 0 and its supply terminal */
+    var a2=Math.min(YM,swY), b2=Math.max(YM,swY);
+    o+=line(XM,YM,XI,YM)+line(XM,swY,XI,swY)+vSwitch(XI,a2,b2,state.bit)+txt(XI+20,(a2+b2)/2+4,sw,"tag");
+    if(k==="relay") o+='<rect class="res" x="'+(XI+10)+'" y="150" width="26" height="14" rx="2"/>'+txt(XI+23,182,"relay coil","tag","middle")+
+      '<line class="wr" x1="'+(XI+23)+'" y1="150" x2="'+(XI+23)+'" y2="'+((a2+b2)/2+8)+'" style="stroke-dasharray:3 3"/>';
+    /* rails: the supply terminal of the module, and the lamp's return */
+    o+=line(X0,YT,md.modTop?XM:(md.loadTop?XR:X0+1),YT)+line(X0,YB,md.modTop?(md.loadTop?X0+1:XR):XM,YB);
+    /* load: rail -> XR -> lamp -> OUT 0 */
+    o+=line(XR,loadY,XR,YM)+line(XR,YM,D1,YM)+lamp((D1+D2)/2,YM,md.current,true)+line(D2,YM,XM,YM)+
+       txt((D1+D2)/2,YM+30,"Lamp","tag","middle")+(ac?"":txt((D1+D2)/2,YM+44,md.loadTop?"(other end to +24 V)":"(other end to 0 V)","tag","middle"));
+    if(md.current){
+      if(md.modTop){ /* top rail -> module switch -> OUT -> lamp -> bottom rail */
+        o+=poly([[X0,YT],[XM,YT],[XI,YT],[XI,YT+2]],fl)+poly([[XI,YM],[XM,YM],[D2,YM]],fl)+poly([[D1,YM],[XR,YM],[XR,YB],[X0,YB]],fl);
+      } else {       /* top rail -> lamp -> OUT -> module switch -> bottom rail */
+        o+=poly([[X0,YT],[XR,YT],[XR,YM],[D1,YM]],fl)+poly([[D2,YM],[XM,YM],[XI,YM]],fl)+poly([[XI,YB],[XM,YB],[X0,YB]],fl);
+      }
+    }
+  }
+  document.getElementById("diag").innerHTML='<svg viewBox="0 0 360 226" role="img" aria-label="Wiring diagram for '+mname+'">'+o+'</svg>';
+  /* result line */
+  var t=TXT[sec+"_"+k], res=document.getElementById("result"), go = sec==="in"?state.closed:state.bit;
+  if(md.mistake && go){ res.className="result bad"; res.textContent="✗ "+t.bad; }
+  else if(md.current){ res.className="result ok"; res.textContent="✓ "+t.good; }
+  else { res.className="result"; res.textContent = sec==="in" ? "Close the switch to send current through the input." : "Turn the output bit on to switch the lamp."; }
+  /* table */
+  var h;
+  if(sec==="in"){
+    h=row("Switch",state.closed?"Closed":"Open")+row("Voltage across the input",md.vAcross)+row("Current",md.current?"Flowing":"None")+
+      row("Input LED",bit(md.current))+row("Input bit",bit(md.current));
+  } else {
+    h=row("Output bit",bit(state.bit))+row("Module LED",bit(state.bit))+row({source:"Transistor (PNP)",sink:"Transistor (NPN)",triac:"Triac",relay:"Relay contact"}[k],state.bit?"On (closed)":"Off (open)")+
+      row("Voltage across the lamp",md.vAcross)+row("Lamp",bit(md.current));
+  }
+  document.getElementById("tbl").innerHTML=h;
+  /* bottom bar indicators */
+  var ind = sec==="in" ? [["LED",md.current],["Input bit",md.current]] : [["Bit",state.bit],["LED",state.bit],["Lamp",md.current]];
+  document.getElementById("pBits").innerHTML=ind.map(function(i){return '<span class="bl"><i class="'+(i[1]?'on':'')+'"></i>'+i[0]+'</span>'}).join("");
+}
+function row(a,b){return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'}
+function bit(v){return '<span class="bit'+(v?' on':'')+'">'+(v?1:0)+'</span>'}
+
+/* ---------- Page setup ---------- */
+function render(){
+  var sec=state.sec, k=cur(), basics=sec==="basics";
+  document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.sec===sec))});
+  document.getElementById("subWrap").hidden=basics;
+  if(!basics){
+    document.getElementById("subLbl").textContent = sec==="in"?"Input module":"Output module";
+    document.getElementById("subSeg").innerHTML=SUBS[sec].map(function(s){return '<button data-sub="'+s+'" aria-pressed="'+(s===k)+'">'+SUBLBL[sec][s]+'</button>'}).join("");
+  }
+  /* option row: device wiring on DC pages, supply on the relay page */
+  var ow=document.getElementById("optWrap"), os=document.getElementById("optSeg");
+  if(hasMistake()){
+    ow.hidden=false; document.getElementById("optLbl").textContent = sec==="in"?"Device wiring":"Load wiring";
+    os.innerHTML='<button data-opt="ok" aria-pressed="'+!state.mistake+'">Correct (opposites)</button><button data-opt="bad" aria-pressed="'+state.mistake+'">Mistake (same type)</button>';
+  } else if(sec==="out"&&k==="relay"){
+    ow.hidden=false; document.getElementById("optLbl").textContent="Supply wired to the relay’s COM";
+    os.innerHTML='<button data-opt="dc" aria-pressed="'+!state.relayAC+'">24 VDC</button><button data-opt="ac" aria-pressed="'+state.relayAC+'">120 VAC</button>';
+  } else ow.hidden=true;
+  var t = basics ? TXT.basics : TXT[sec+"_"+k];
+  document.getElementById("title").textContent=t.title;
+  document.getElementById("desc").textContent=t.desc;
+  document.getElementById("tryBox").innerHTML=t.tryIt;
+  document.getElementById("noteBox").innerHTML=t.note+(basics||k==="ac"||k==="triac"||k==="relay"?"":TERMS)+(basics?TERMS:"");
+  document.getElementById("basics").hidden=!basics;
+  document.getElementById("diagWrap").hidden=basics;
+  /* controls */
+  var lbl = basics ? ["Switches","close all four"] : sec==="in" ? ["Switch","field device"] : ["Output bit","from the program"];
+  var on = sec==="out" ? state.bit : state.closed;
+  document.getElementById("acts").innerHTML='<button class="switch" id="mainSw" aria-pressed="'+on+'"><span class="knob" aria-hidden="true"></span><span><b>'+lbl[0]+'</b><small>'+lbl[1]+'</small></span></button>';
+  if(basics){ buildBasics(); var n=state.closed?2:0; document.getElementById("pBits").innerHTML='<span class="bl"><b class="cnt">'+n+'/4</b>Bulbs lit</span>'; }
+  else buildDiag();
+}
+document.querySelector(".plats").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return; state.sec=b.dataset.sec; store.set("ss-sec",state.sec);
+  state.closed=false; state.bit=false; state.mistake=false; render();
+});
+document.getElementById("subSeg").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return; state.sub[state.sec]=b.dataset.sub; store.set("ss-"+state.sec,b.dataset.sub);
+  state.closed=false; state.bit=false; state.mistake=false; render();
+});
+document.getElementById("optSeg").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return; var v=b.dataset.opt;
+  if(v==="ok"||v==="bad") state.mistake = v==="bad"; else state.relayAC = v==="ac";
+  render();
+});
+document.getElementById("acts").addEventListener("click",function(e){
+  if(!e.target.closest("#mainSw")) return;
+  if(state.sec==="out") state.bit=!state.bit; else state.closed=!state.closed;
+  render();
+});
+render();
+})();
+</script>
+</body>
+</html>
