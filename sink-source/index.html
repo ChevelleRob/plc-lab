@@ -155,7 +155,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 @media (max-width:400px){ .pilot small{display:none} .bar .pb b{font-size:12px} }
 
 /* Logic: six type buttons in a 3 x 2 grid */
-.plats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.plats{grid-template-columns:repeat(4,minmax(0,1fr))}
 .plats button,.plats button:nth-child(n+4){grid-column:auto}
 .pb.k-st{--cap:var(--live)} .pb.k-sp{--cap:var(--red)}
 .bar .switch{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
@@ -241,17 +241,55 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .qcard .tag{font-size:11px;fill:var(--muted)}
 .qcard .pm{font-family:var(--mono);font-size:14px;font-weight:700;fill:var(--ink)}
 .bar .cnt{font-family:var(--mono);font-size:18px;line-height:16px;text-align:center}
+/* Sensors */
+.ladder .wo{stroke:var(--ink);stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ladder .wc{stroke-width:3.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ladder .wl{font-family:var(--mono);font-size:10px;font-weight:700;fill:var(--muted)}
+.ladder .wl2{font-family:var(--mono);font-size:11px;font-weight:700;fill:var(--ink)}
+.ladder .sbody{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder .lens{fill:var(--c1bg);stroke:var(--ink);stroke-width:1.5}
+.ladder .sled{fill:#3A4650}
+.ladder .sled.on{fill:var(--amber);filter:drop-shadow(0 0 4px var(--amber))}
+.ladder .beam{stroke:var(--amber);stroke-width:3;stroke-dasharray:6 4}
+.ladder .beam.back{opacity:.7}
+.ladder .beam.fade{opacity:.35}
+.ladder .target{fill:var(--c4bg);stroke:var(--c4);stroke-width:2}
+.ladder .target.ghost{fill:none;stroke:var(--line);stroke-dasharray:4 4}
+.ladder .cable{fill:#3A4650;stroke:var(--ink);stroke-width:1.5}
+.ladder .cable + text{fill:#EEF1F2}
+.ladder .band.bg{fill:var(--surface2);stroke:var(--line)}
+.ladder .band.tg{fill:var(--c4bg);stroke:var(--c4)}
+.ladder .axis{stroke:var(--wire);stroke-width:2}
+.ladder .tick{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.ladder .thr{stroke:var(--c1);stroke-width:3}
+.ladder .thl{font-size:11px;font-weight:700;fill:var(--c1)}
+.ladder .mk{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 3}
+.ladder .mkl{font-family:var(--mono);font-size:12px;font-weight:700;fill:var(--muted)}
+.ladder .sigdot{fill:var(--surface);stroke:var(--ink);stroke-width:2.5}
+.ladder .sigdot.on{fill:var(--live);stroke:var(--live);filter:drop-shadow(0 0 4px var(--live))}
+.opts2 .seg button{font-size:14px;padding:8px 4px}
+.cols td{text-align:left;vertical-align:top}
+.cols td:last-child{font-family:var(--sans);font-weight:400;text-align:left;font-size:14px}
+.cols td:nth-child(2){white-space:nowrap}
+.cols .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;box-shadow:0 0 0 1.5px var(--ink)}
+#sensRange{width:100%;accent-color:var(--c1);margin:4px 0 8px}
+.steps{margin:6px 0 10px;padding-left:22px}
+.steps li{margin:4px 0}
+.tbtns{display:flex;flex-wrap:wrap;gap:8px}
+.tbtns button{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}
+.tbtns button.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
 @media (prefers-reduced-motion: reduce){.ladder .flow,.qcard .flow{animation:none;stroke-dasharray:none}}
 </style>
 </head>
 <body class="has-bar">
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Sinking &amp; sourcing</span><span class="ver">v1.1</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Sinking &amp; sourcing</span><span class="ver">v1.2</span></div>
     <div class="plats" role="group" aria-label="Section">
       <button data-sec="basics">Basics</button>
       <button data-sec="in">Inputs</button>
       <button data-sec="out">Outputs</button>
+      <button data-sec="sens">Sensors</button>
     </div>
   </div>
 </header>
@@ -266,6 +304,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
       <div class="lbl" id="optLbl"></div>
       <div class="seg" id="optSeg" role="group"></div>
     </div>
+    <div id="sensOpts" class="opts2" hidden></div>
     <h2 id="title"></h2>
     <p id="desc"></p>
 
@@ -276,6 +315,33 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
       <p class="result" id="result" aria-live="polite"></p>
       <div class="lbl">What is happening</div>
       <table class="status tt" id="tbl"></table>
+    </div>
+
+    <div id="sensWrap" hidden>
+      <div class="lbl">What the sensor sees</div>
+      <div class="ladder" id="scene" aria-label="Sensor and target"></div>
+      <div class="lbl">Wiring diagram</div>
+      <div class="ladder" id="sdiag" aria-label="Sensor wiring diagram"></div>
+      <p class="result" id="sresult" aria-live="polite"></p>
+      <div class="lbl">What is happening</div>
+      <table class="status tt" id="stbl"></table>
+    </div>
+    <div id="colorsWrap" hidden>
+      <div class="ladder" id="cable" aria-label="Sensor cable"></div>
+      <table class="status tt cols" id="ctbl"></table>
+    </div>
+    <div id="tuneWrap" hidden>
+      <div class="lbl">Signal strength and switch point</div>
+      <div class="ladder" id="gauge" aria-label="Signal gauge"></div>
+      <label class="lbl" for="sensRange">Sensitivity: <b id="sensVal"></b> <span class="muted">(turning it up moves the switch point left)</span></label>
+      <input type="range" id="sensRange" min="0" max="100" step="1" value="40">
+      <ol class="steps">
+        <li><b>No target:</b> turn the sensitivity <b>up</b> until the output turns on with nothing there, a false positive. Press <b>Mark A</b>.</li>
+        <li><b>Target in:</b> turn it <b>down</b> until the output turns off with the target there, a false negative. Press <b>Mark B</b>.</li>
+        <li>Press <b>Set midpoint</b>: halfway between A and B gives the most room from both mistakes.</li>
+      </ol>
+      <div class="tbtns" id="tuneBtns"><button data-a="A">Mark A</button><button data-a="B">Mark B</button><button data-a="mid">Set midpoint</button><button data-a="reset" class="ghost">Start over</button></div>
+      <p class="result" id="tuneMsg" aria-live="polite">Start with no target: turn the sensitivity up until the output turns on.</p>
     </div>
 
     <div class="try" id="tryBox"></div>
@@ -297,19 +363,21 @@ var store = {
   get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
   set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 };
-var SUBS = {in:["sink","source","ac"], out:["source","sink","triac","relay"]};
-var SUBLBL = {in:{sink:"Sinking",source:"Sourcing",ac:"AC"}, out:{source:"Sourcing",sink:"Sinking",triac:"Triac (AC)",relay:"Relay"}};
+var SUBS = {in:["sink","source","ac"], out:["source","sink","triac","relay"], sens:["pnp","npn","colors","sens"]};
+var SUBLBL = {in:{sink:"Sinking",source:"Sourcing",ac:"AC"}, out:{source:"Sourcing",sink:"Sinking",triac:"Triac (AC)",relay:"Relay"}, sens:{pnp:"PNP",npn:"NPN",colors:"Wire colors",sens:"Sensitivity"}};
 var state = {
   sec: store.get("ss-sec") || "basics",
-  sub: {in: store.get("ss-in") || "sink", out: store.get("ss-out") || "source"},
+  sub: {in: store.get("ss-in") || "sink", out: store.get("ss-out") || "source", sens: store.get("ss-sens") || "pnp"},
+  sn: {diffuse:true, darkOn:false, four:false, mistake:false, target:false, sens:40, A:null, B:null, sig:32},
   mistake:false, relayAC:false, closed:false, bit:false
 };
-if(["basics","in","out"].indexOf(state.sec)<0) state.sec="basics";
+if(["basics","in","out","sens"].indexOf(state.sec)<0) state.sec="basics";
+if(SUBS.sens.indexOf(state.sub.sens)<0) state.sub.sens="pnp";
 if(SUBS.in.indexOf(state.sub.in)<0) state.sub.in="sink";
 if(SUBS.out.indexOf(state.sub.out)<0) state.sub.out="source";
 function cur(){ return state.sec==="basics" ? "" : state.sub[state.sec] }
 function isAC(){ var k=cur(); return (state.sec==="in"&&k==="ac") || (state.sec==="out"&&(k==="triac"||(k==="relay"&&state.relayAC))) }
-function hasMistake(){ var k=cur(); return state.sec!=="basics" && k!=="ac" && k!=="triac" && k!=="relay" }
+function hasMistake(){ var k=cur(); return state.sec!=="basics" && state.sec!=="sens" && k!=="ac" && k!=="triac" && k!=="relay" }
 
 /* ---------- Text for each page ---------- */
 var TXT = {
@@ -357,6 +425,23 @@ var TXT = {
     tryIt:"<b>Try this:</b> turn the output bit on with 24 VDC, then switch the supply to 120 VAC and do it again. Same module, same contact.",
     note:"<p><b>Relay outputs</b> switch AC or DC, at any voltage within the contact’s rating. Points that share a COM share one supply, so put different voltages on different commons.</p><p>Trade-offs: contacts take about 10 ms to move and wear out after a limited number of operations, so relays are a poor choice for fast cycling. They are a great choice for mixed voltages and small loads.</p>"}
 };
+var SENSNOTE = "<p><b>Light-on (L/O)</b> means the output is on when the receiver sees light. <b>Dark-on (D/O)</b> means it is on when it doesn\u2019t. Which one means \u201Cpart present\u201D depends on the sensing mode. A diffuse sensor sees light when a part reflects it back, so light-on means part present. A through-beam (or retroreflective) sensor loses its light when a part breaks the beam, so dark-on means part present.</p><p><b>4-wire sensors</b> often have two outputs. On many, WHT is the complement of BLK: one is on whenever the other is off, so you get L/O and D/O at the same time. On others WHT is a second, independent output or a diagnostic pin. Check the data sheet.</p><p>Most sensors have an output LED on the body. Like the module LED, it only tells you the sensor switched, not that the PLC saw it.</p>";
+TXT.sens_pnp={title:"PNP sensor (sourcing)",
+  desc:"When a PNP sensor turns on, it connects its signal wire to +24 V, so it sources current. BRN and BLU power the sensor. It needs a sinking input, with COM to 0 V.",
+  tryIt:"<b>Try this:</b> flip the Target switch. Diffuse means the target reflects the light back to the sensor; through-beam means the target blocks the beam. Then try Dark-on, Through-beam and 4-wire, and last of all the <b>Mistake</b> wiring, where the PNP sensor goes into a sourcing input.",
+  note:SENSNOTE};
+TXT.sens_npn={title:"NPN sensor (sinking)",
+  desc:"When an NPN sensor turns on, it connects its signal wire to 0 V, so it sinks current. BRN and BLU power the sensor. It needs a sourcing input, with COM to +24 V.",
+  tryIt:"<b>Try this:</b> flip the Target switch and follow the current: it comes in at COM and leaves through the sensor. Then try the <b>Mistake</b> wiring, where the NPN sensor goes into a sinking input.",
+  note:SENSNOTE};
+TXT.sens_colors={title:"Sensor wire colors",
+  desc:"DC sensors use a standard color code (IEC 60947-5-2), and on an M12 connector each color has its own pin number.",
+  tryIt:"<b>On a 3-wire sensor</b> BRN and BLU still carry the power: BRN to +V and BLU to 0 V. The third wire is the signal, usually BLK, but some sensors use WHT instead. Check the label or data sheet before you land it.",
+  note:"<p><b>4-wire sensors</b> add WHT. Wire BLK and WHT to two inputs and you can use either output in the program.</p><p><b>2-wire DC sensors</b> have only BRN and BLU and are wired in series with the input, like a switch. They leak a little current when off, so check that the input can handle it.</p>"};
+TXT.sens_sens={title:"Setting sensitivity",
+  desc:"Set a sensor too sensitive and it sees things that aren\u2019t there: a false positive. Set it too dull and it misses the part: a false negative. This method finds both edges and sets the sensor between them.",
+  tryIt:"<b>Try this:</b> follow the three steps. Watch the dot jitter: real signals are noisy, which is why a setting right at an edge makes the output chatter on and off.",
+  note:"<p><b>Is there a name for it?</b> There isn\u2019t one standard term. Sensor makers usually describe it as setting the sensitivity midway between the two switching points. Many newer sensors automate it as a <b>two-point teach</b>: you show the sensor the background, then the target, and it puts the switch point between them.</p><p>Repeat the setting when products change color or finish, and after cleaning a dirty lens or reflector.</p>"};
 var TERMS = "<p><b>Watch the words.</b> Manufacturers don’t all use “sinking” and “sourcing” the same way. Some label a module by the device it expects, and many European manuals say <b>P-switching</b> and <b>M-switching</b> instead. These come from German: P-switching switches the <b>P</b>lus side (PNP, sourcing), and M-switching switches to <i><b>M</b>asse</i>, German for ground or 0 V (NPN, sinking). So it is M, not N. When in doubt, read the wiring diagram in the module’s manual and check where COM goes.</p>";
 
 /* ---------- Drawing helpers ---------- */
@@ -521,15 +606,197 @@ function buildDiag(){
 function row(a,b){return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'}
 function bit(v){return '<span class="bit'+(v?' on':'')+'">'+(v?1:0)+'</span>'}
 
+/* ---------- Sensors ---------- */
+var WC = {BRN:"#8a5a2b", BLU:"#2f6fd6", BLK:"#151515", WHT:"#f4f4f4"};
+function cw(pts,color){ /* colored wire with an outline so black and white show in both themes */
+  return poly(pts,"wo")+'<polyline class="wc" style="stroke:'+color+'" points="'+pts.map(function(p){return p.join(",")}).join(" ")+'"/>';
+}
+function sensOut(){
+  var sn=state.sn, light = sn.diffuse ? sn.target : !sn.target, blk = sn.darkOn ? !light : light;
+  return {light:light, blk:blk, wht:!blk};
+}
+function sensModel(){
+  var sn=state.sn, k=cur(), pnp=k==="pnp", o=sensOut();
+  var comTop = pnp ? sn.mistake : !sn.mistake;         /* correct: PNP -> sinking (COM 0 V), NPN -> sourcing (COM +24 V) */
+  var works = pnp ? !comTop : comTop;
+  return {pnp:pnp, comTop:comTop, works:works, out:o, in0: works && o.blk, in1: works && sn.four && o.wht};
+}
+function buildScene(){
+  var sn=state.sn, o=sensOut(), h="", y=48;
+  if(sn.diffuse){
+    h+='<rect class="sbody" x="16" y="30" width="62" height="36" rx="6"/><circle class="lens" cx="80" cy="'+y+'" r="7"/>'+
+       '<circle class="sled'+(o.blk?' on':'')+'" cx="30" cy="38" r="4"/>'+txt(47,84,"Sensor","tag","middle");
+    if(sn.target){
+      h+='<line class="beam" x1="88" y1="'+(y-5)+'" x2="216" y2="'+(y-5)+'"/><line class="beam back" x1="216" y1="'+(y+5)+'" x2="88" y2="'+(y+5)+'"/>'+
+         '<rect class="target" x="216" y="18" width="56" height="60" rx="4"/>'+txt(244,92,"Target","tag","middle");
+    } else {
+      h+='<line class="beam fade" x1="88" y1="'+y+'" x2="340" y2="'+y+'"/>'+
+         '<rect class="target ghost" x="216" y="18" width="56" height="60" rx="4"/>'+txt(244,92,"No target","tag","middle");
+    }
+  } else {
+    h+='<rect class="sbody" x="10" y="30" width="54" height="36" rx="6"/><circle class="lens" cx="66" cy="'+y+'" r="7"/>'+txt(37,84,"Emitter","tag","middle")+
+       '<rect class="sbody" x="296" y="30" width="54" height="36" rx="6"/><circle class="lens" cx="294" cy="'+y+'" r="7"/>'+
+       '<circle class="sled'+(o.blk?' on':'')+'" cx="338" cy="38" r="4"/>'+txt(323,84,"Receiver","tag","middle");
+    if(sn.target){
+      h+='<line class="beam" x1="74" y1="'+y+'" x2="156" y2="'+y+'"/><rect class="target" x="156" y="18" width="48" height="60" rx="4"/>'+txt(180,92,"Target","tag","middle");
+    } else {
+      h+='<line class="beam" x1="74" y1="'+y+'" x2="286" y2="'+y+'"/><rect class="target ghost" x="156" y="18" width="48" height="60" rx="4"/>'+txt(180,92,"No target","tag","middle");
+    }
+  }
+  h+=txt(180,14,"Light at receiver: "+(o.light?"yes":"no"),"tl","middle");
+  document.getElementById("scene").innerHTML='<svg viewBox="0 0 360 100" role="img" aria-label="Sensor and target">'+h+'</svg>';
+}
+function buildSensorDiag(){
+  var sn=state.sn, m=sensModel(), o="", fl="flow", T=44, B=216, IN0=120, IN1=150, XA=280, XB=304;
+  var comY = m.comTop?T:B, mname=(m.comTop?"Sourcing":"Sinking")+" input";
+  /* power supply */
+  o+='<rect class="psu" x="8" y="24" width="76" height="212" rx="6"/>'+txt(46,120,"Power","plbl","middle")+txt(46,136,"supply","plbl","middle")+txt(46,156,"24 VDC","pv","middle")+
+     term(84,T)+term(84,B)+txt(74,T+4,"+","pm","end")+txt(74,B+4,"−","pm","end");
+  /* module */
+  o+='<rect class="mod" x="236" y="24" width="116" height="212" rx="6"/>'+txt(294,38,mname,"plbl","middle");
+  o+=term(236,IN0)+txt(244,IN0-6,"IN 0","tl")+term(236,comY)+txt(244,comY+16,"COM","tl");
+  o+=line(236,IN0,XA,IN0)+line(XA,Math.min(IN0,comY),XA,Math.max(IN0,comY))+'<rect class="res" x="'+(XA-6)+'" y="'+((IN0+comY)/2-14)+'" width="12" height="28" rx="2"/>';
+  o+='<circle class="led'+(m.in0?' on':'')+'" cx="336" cy="'+IN0+'" r="7"/>'+txt(336,IN0+20,"0","tag","middle");
+  if(sn.four){
+    o+=term(236,IN1)+txt(244,IN1-6,"IN 1","tl")+line(236,IN1,XB,IN1)+line(XB,Math.min(IN1,comY),XB,Math.max(IN1,comY))+
+       '<rect class="res" x="'+(XB-6)+'" y="'+((IN1+comY)/2-12)+'" width="12" height="24" rx="2"/>'+
+       '<circle class="led'+(m.in1?' on':'')+'" cx="336" cy="'+IN1+'" r="7"/>'+txt(336,IN1+20,"1","tag","middle");
+  }
+  o+=line(236,comY,sn.four?XB:XA,comY);
+  /* supply rails: + to the sensor (and COM if sourcing), - to the sensor (and COM if sinking) */
+  o+=line(84,T,m.comTop?236:116,T)+line(84,B,m.comTop?116:236,B);
+  /* sensor body and its colored wires */
+  o+='<rect class="sbody" x="96" y="96" width="80" height="80" rx="8"/>'+txt(136,130,m.pnp?"PNP":"NPN","plbl","middle")+txt(136,146,"sensor","plbl","middle")+
+     '<circle class="sled'+(m.out.blk?' on':'')+'" cx="164" cy="106" r="4"/>';
+  o+=cw([[116,T],[116,96]],WC.BRN)+txt(122,76,"BRN","wl")+cw([[116,176],[116,B]],WC.BLU)+txt(122,202,"BLU","wl")+
+     cw([[176,IN0],[236,IN0]],WC.BLK)+txt(180,IN0-6,"BLK","wl");
+  if(sn.four) o+=cw([[176,IN1],[236,IN1]],WC.WHT)+txt(180,IN1-6,"WHT","wl");
+  /* current through each input that is on */
+  var paths=[];
+  [[m.in0,IN0,XA],[m.in1,IN1,XB]].forEach(function(r){
+    if(!r[0]) return;
+    if(!m.comTop){ paths.push([[84,T],[116,T],[116,96]]); paths.push([[176,r[1]],[236,r[1]],[r[2],r[1]],[r[2],B],[236,B],[84,B]]); }
+    else { paths.push([[84,T],[236,T],[r[2],T],[r[2],r[1]],[236,r[1]],[176,r[1]]]); paths.push([[116,176],[116,B],[84,B]]); }
+  });
+  paths.forEach(function(p){ o+=poly(p,fl) });
+  document.getElementById("sdiag").innerHTML='<svg viewBox="0 0 360 250" role="img" aria-label="Sensor wiring diagram">'+o+'</svg>';
+  /* result */
+  var res=document.getElementById("sresult"), anyOut = m.out.blk || (sn.four && m.out.wht);
+  if(!m.works && anyOut){ res.className="result bad"; res.textContent = m.pnp
+      ? "✗ PNP sensor into a sourcing input: the sensor switches its output to +24 V, but COM is also at +24 V, so there is 0 V across the input. The sensor’s LED is on, and the PLC never sees it."
+      : "✗ NPN sensor into a sinking input: the sensor switches its output to 0 V, but COM is also at 0 V, so there is 0 V across the input. The sensor’s LED is on, and the PLC never sees it."; }
+  else if(m.in0||m.in1){ res.className="result ok"; res.textContent = m.pnp
+      ? "✓ Current path: + → BRN → sensor → "+(m.in0?"BLK → IN 0":"WHT → IN 1")+" → input circuit → COM → −"
+      : "✓ Current path: + → COM → input circuit → "+(m.in0?"IN 0 → BLK":"IN 1 → WHT")+" → sensor → BLU → −"; }
+  else { res.className="result"; res.textContent="The sensor’s output is off. Flip the Target switch, or change the output mode."; }
+  /* table */
+  var h=row("Target",sn.target?"Present":"Absent")+row("Light at receiver",m.out.light?"Yes":"No")+row("Output mode",sn.darkOn?"Dark-on (D/O)":"Light-on (L/O)")+
+    row("BLK output",m.out.blk?"On":"Off")+(sn.four?row("WHT output (complement)",m.out.wht?"On":"Off"):"")+row("Input bit 0",bit(m.in0))+(sn.four?row("Input bit 1",bit(m.in1)):"");
+  document.getElementById("stbl").innerHTML=h;
+  var ind=[["Sensor LED",m.out.blk],["IN 0",m.in0]]; if(sn.four) ind.push(["IN 1",m.in1]);
+  document.getElementById("pBits").innerHTML=ind.map(function(i){return '<span class="bl"><i class="'+(i[1]?'on':'')+'"></i>'+i[0]+'</span>'}).join("");
+}
+function buildCable(){
+  var o='<rect class="cable" x="10" y="64" width="120" height="28" rx="14"/>'+txt(70,82,"Sensor cable","plbl","middle");
+  [["1","BRN","+V",22],["2","WHT","output 2",58],["3","BLU","0 V",94],["4","BLK","output",130]].forEach(function(w){
+    o+=cw([[130,78],[160,78],[190,w[3]],[222,w[3]]],WC[w[1]])+txt(230,w[3]+4,w[0]+" "+w[1]+" · "+w[2],"wl2");
+  });
+  document.getElementById("cable").innerHTML='<svg viewBox="0 0 360 150" role="img" aria-label="Sensor cable wire colors">'+o+'</svg>';
+  document.getElementById("ctbl").innerHTML='<tr class="th"><td>M12 pin</td><td>Color</td><td>Use</td></tr>'+
+    '<tr><td>1</td><td><span class="sw" style="background:'+WC.BRN+'"></span>BRN</td><td>+V supply, usually 10–30 VDC</td></tr>'+
+    '<tr><td>2</td><td><span class="sw" style="background:'+WC.WHT+'"></span>WHT</td><td>Second output: the complement of BLK (NC), an independent output, or diagnostics. Some 3-wire sensors put their only output here.</td></tr>'+
+    '<tr><td>3</td><td><span class="sw" style="background:'+WC.BLU+'"></span>BLU</td><td>0 V (common)</td></tr>'+
+    '<tr><td>4</td><td><span class="sw" style="background:'+WC.BLK+'"></span>BLK</td><td>Output (usually NO). On IO-Link sensors this is also the communication line.</td></tr>';
+}
+
+/* Sensitivity: background and target signal levels with a little noise */
+var TUNE={bg:32, tg:68, noise:5};
+function tuneSig(){ return (state.sn.target?TUNE.tg:TUNE.bg) + (Math.random()*2-1)*TUNE.noise }
+function tuneOut(){ return state.sn.sig > 100-state.sn.sens }
+function gx(v){ return 20+v*3.2 }
+function buildGauge(){
+  var sn=state.sn, T=100-sn.sens, on=tuneOut(), o="";
+  o+='<rect class="band bg" x="'+gx(TUNE.bg-TUNE.noise)+'" y="34" width="'+(TUNE.noise*2*3.2)+'" height="34" rx="3"/>'+txt(gx(TUNE.bg),28,"Background","tag","middle")+
+     '<rect class="band tg" x="'+gx(TUNE.tg-TUNE.noise)+'" y="34" width="'+(TUNE.noise*2*3.2)+'" height="34" rx="3"/>'+txt(gx(TUNE.tg),28,"Target","tag","middle");
+  o+=line(gx(0),51,gx(100),51,"axis");
+  [0,25,50,75,100].forEach(function(v){ o+=line(gx(v),46,gx(v),56,"axis")+txt(gx(v),82,String(v),"tick","middle") });
+  if(sn.A!=null) o+=line(gx(100-sn.A),30,gx(100-sn.A),72,"mk")+txt(gx(100-sn.A),104,"A","mkl","middle");
+  if(sn.B!=null) o+=line(gx(100-sn.B),30,gx(100-sn.B),72,"mk")+txt(gx(100-sn.B),104,"B","mkl","middle");
+  o+='<line class="thr" x1="'+gx(T)+'" y1="24" x2="'+gx(T)+'" y2="78"/>'+txt(gx(T),18,"switch point","thl","middle");
+  o+='<circle class="sigdot'+(on?' on':'')+'" cx="'+gx(sn.sig)+'" cy="51" r="7"/>';
+  o+=txt(gx(50),122,"Signal strength → (output turns on right of the switch point)","tag","middle");
+  document.getElementById("gauge").innerHTML='<svg viewBox="0 0 360 130" role="img" aria-label="Signal strength and switch point">'+o+'</svg>';
+  document.getElementById("sensVal").textContent=sn.sens;
+  var ind=[["Output",on]];
+  document.getElementById("pBits").innerHTML=ind.map(function(i){return '<span class="bl"><i class="'+(i[1]?'on':'')+'"></i>'+i[0]+'</span>'}).join("");
+}
+function tuneMsg(t){ document.getElementById("tuneMsg").innerHTML=t }
+var tuneTimer=null;
+function tuneRun(on){
+  if(on && !tuneTimer){ tuneTimer=setInterval(function(){ state.sn.sig=tuneSig(); buildGauge(); },150); }
+  if(!on && tuneTimer){ clearInterval(tuneTimer); tuneTimer=null; }
+}
+function renderSensors(){
+  var sn=state.sn, k=cur();
+  var t=TXT["sens_"+k];
+  document.getElementById("title").textContent=t.title;
+  document.getElementById("desc").textContent=t.desc;
+  document.getElementById("tryBox").innerHTML=t.tryIt;
+  document.getElementById("noteBox").innerHTML=t.note+(k==="pnp"||k==="npn"?TERMS:"");
+  var so=document.getElementById("sensOpts");
+  so.hidden = !(k==="pnp"||k==="npn");
+  if(!so.hidden){
+    var seg=function(key,label,a,b){ return '<div class="lbl">'+label+'</div><div class="seg" data-key="'+key+'"><button data-v="0" aria-pressed="'+!sn[key]+'">'+a+'</button><button data-v="1" aria-pressed="'+!!sn[key]+'">'+b+'</button></div>' };
+    so.innerHTML = '<div class="lbl">Sensing</div><div class="seg" data-key="diffuse"><button data-v="1" aria-pressed="'+sn.diffuse+'">Diffuse</button><button data-v="0" aria-pressed="'+!sn.diffuse+'">Through-beam</button></div>'+
+      seg("darkOn","Output mode","Light-on (L/O)","Dark-on (D/O)")+seg("four","Cable","3-wire","4-wire")+seg("mistake","Wiring","Correct","Mistake");
+  }
+  document.getElementById("sensWrap").hidden = !(k==="pnp"||k==="npn");
+  document.getElementById("colorsWrap").hidden = k!=="colors";
+  document.getElementById("tuneWrap").hidden = k!=="sens";
+  var bar=document.getElementById("ctlBar"), hasBar = k!=="colors";
+  bar.hidden=!hasBar; document.body.classList.toggle("has-bar",hasBar);
+  if(hasBar) document.getElementById("acts").innerHTML='<button class="switch" id="mainSw" aria-pressed="'+sn.target+'"><span class="knob" aria-hidden="true"></span><span><b>Target</b><small>'+(sn.target?"present":"absent")+'</small></span></button>';
+  tuneRun(k==="sens");
+  if(k==="pnp"||k==="npn"){ buildScene(); buildSensorDiag(); }
+  else if(k==="colors") buildCable();
+  else { document.getElementById("sensRange").value=sn.sens; buildGauge(); }
+}
+document.getElementById("sensOpts").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return; var key=b.parentNode.dataset.key;
+  state.sn[key] = b.dataset.v==="1"; render();
+});
+document.getElementById("sensRange").addEventListener("input",function(){ state.sn.sens=+this.value; buildGauge(); });
+document.getElementById("tuneBtns").addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b) return; var sn=state.sn, a=b.dataset.a, T=100-sn.sens;
+  if(a==="A"){
+    if(sn.target) return tuneMsg("Take the target away first (Target switch off). Point A is found with <b>nothing</b> in front of the sensor.");
+    if(T > TUNE.bg+TUNE.noise) return tuneMsg("Not yet: the output hasn’t turned on with no target. Keep turning the sensitivity <b>up</b>.");
+    sn.A=sn.sens; tuneMsg("Point A marked at "+sn.A+": too sensitive, it sees the background. Now turn the Target switch on and turn the sensitivity <b>down</b>.");
+  } else if(a==="B"){
+    if(!sn.target) return tuneMsg("Put the target in first (Target switch on). Point B is found <b>with</b> the target there.");
+    if(T < TUNE.tg-TUNE.noise) return tuneMsg("Not yet: the output still sees the target. Keep turning the sensitivity <b>down</b>.");
+    sn.B=sn.sens; tuneMsg("Point B marked at "+sn.B+": too dull, it misses the target."+(sn.A!=null?" Now press <b>Set midpoint</b>.":" Now find point A."));
+  } else if(a==="mid"){
+    if(sn.A==null||sn.B==null) return tuneMsg("Mark both A and B first.");
+    sn.sens=Math.round((sn.A+sn.B)/2); document.getElementById("sensRange").value=sn.sens;
+    var margin=Math.round(Math.abs(sn.A-sn.B)/2);
+    tuneMsg("Set to "+sn.sens+", halfway between A ("+sn.A+") and B ("+sn.B+"). That leaves about "+margin+" either way before a false positive or a false negative. Flip the target in and out: the output follows it cleanly.");
+  } else if(a==="reset"){ sn.A=null; sn.B=null; sn.sens=40; document.getElementById("sensRange").value=40; tuneMsg("Start again: with no target, turn the sensitivity up until the output turns on."); }
+  buildGauge();
+});
+
 /* ---------- Page setup ---------- */
 function render(){
-  var sec=state.sec, k=cur(), basics=sec==="basics";
+  var sec=state.sec, k=cur(), basics=sec==="basics", sens=sec==="sens";
+  if(!sens){ tuneRun(false); document.getElementById("ctlBar").hidden=false; document.body.classList.add("has-bar");
+    ["sensOpts","sensWrap","colorsWrap","tuneWrap"].forEach(function(id){document.getElementById(id).hidden=true}); }
   document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.sec===sec))});
   document.getElementById("subWrap").hidden=basics;
   if(!basics){
-    document.getElementById("subLbl").textContent = sec==="in"?"Input module":"Output module";
+    document.getElementById("subLbl").textContent = sec==="in"?"Input module":sec==="out"?"Output module":"Sensors";
     document.getElementById("subSeg").innerHTML=SUBS[sec].map(function(s){return '<button data-sub="'+s+'" aria-pressed="'+(s===k)+'">'+SUBLBL[sec][s]+'</button>'}).join("");
   }
+  if(sens){ document.getElementById("optWrap").hidden=true; document.getElementById("basics").hidden=true; document.getElementById("diagWrap").hidden=true; renderSensors(); return; }
   /* option row: device wiring on DC pages, supply on the relay page */
   var ow=document.getElementById("optWrap"), os=document.getElementById("optSeg");
   if(hasMistake()){
@@ -568,6 +835,7 @@ document.getElementById("optSeg").addEventListener("click",function(e){
 });
 document.getElementById("acts").addEventListener("click",function(e){
   if(!e.target.closest("#mainSw")) return;
+  if(state.sec==="sens"){ state.sn.target=!state.sn.target; if(cur()==="sens"){ state.sn.sig=tuneSig(); var m=document.getElementById("mainSw"); m.setAttribute("aria-pressed",String(state.sn.target)); m.querySelector("small").textContent=state.sn.target?"present":"absent"; buildGauge(); return; } render(); return; }
   if(state.sec==="out") state.bit=!state.bit; else state.closed=!state.closed;
   render();
 });

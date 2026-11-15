@@ -16,7 +16,7 @@ developed and will be added soon.
 | Counters | [`counters/`](counters/) | Up, down and up/down counters on a live rung with momentary pushbuttons and a timing diagram, for all five PLCs |
 | Logic | [`logic/`](logic/) | NOT, AND, OR, NAND and NOR as ladder, gate symbol and truth table. Memory: hardwired relay seal-in, seal-in, latch/unlatch, and latch/unlatch with a first-scan reset, with an NC-wired Stop button. Generic tags |
 | Compare | [`compare/`](compare/) | Greater than, less than, equal, not equal and in-range (LIM): an up/down count compared with 3, 5 or 8, or a range, on a live rung and a number line, for all five PLCs |
-| Sinking & Sourcing | [`sink-source/`](sink-source/) | How DC inputs and outputs are wired sinking or sourcing, plus AC inputs, triac and relay outputs, with animated current and wrong-wiring examples. Generic |
+| Sinking & Sourcing | [`sink-source/`](sink-source/) | How DC inputs and outputs are wired sinking or sourcing, plus AC inputs, triac and relay outputs, PNP/NPN sensors with wire colors and L/O-D/O, and setting sensor sensitivity. Animated current and wrong-wiring examples. Generic |
 
 ## Who it's for
 
