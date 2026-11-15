@@ -284,7 +284,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 <body class="has-bar">
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Sinking &amp; sourcing</span><span class="ver">v1.2</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Sinking &amp; sourcing</span><span class="ver">v1.3</span></div>
     <div class="plats" role="group" aria-label="Section">
       <button data-sec="basics">Basics</button>
       <button data-sec="in">Inputs</button>
@@ -425,7 +425,7 @@ var TXT = {
     tryIt:"<b>Try this:</b> turn the output bit on with 24 VDC, then switch the supply to 120 VAC and do it again. Same module, same contact.",
     note:"<p><b>Relay outputs</b> switch AC or DC, at any voltage within the contact’s rating. Points that share a COM share one supply, so put different voltages on different commons.</p><p>Trade-offs: contacts take about 10 ms to move and wear out after a limited number of operations, so relays are a poor choice for fast cycling. They are a great choice for mixed voltages and small loads.</p>"}
 };
-var SENSNOTE = "<p><b>Light-on (L/O)</b> means the output is on when the receiver sees light. <b>Dark-on (D/O)</b> means it is on when it doesn\u2019t. Which one means \u201Cpart present\u201D depends on the sensing mode. A diffuse sensor sees light when a part reflects it back, so light-on means part present. A through-beam (or retroreflective) sensor loses its light when a part breaks the beam, so dark-on means part present.</p><p><b>4-wire sensors</b> often have two outputs. On many, WHT is the complement of BLK: one is on whenever the other is off, so you get L/O and D/O at the same time. On others WHT is a second, independent output or a diagnostic pin. Check the data sheet.</p><p>Most sensors have an output LED on the body. Like the module LED, it only tells you the sensor switched, not that the PLC saw it.</p>";
+var SENSNOTE = "<p><b>Light-on (L/O)</b> means the output is on when the receiver sees light. <b>Dark-on (D/O)</b> means it is on when it doesn\u2019t. Which one means \u201Cpart present\u201D depends on the sensing mode. A diffuse sensor sees light when a part reflects it back, so light-on means part present. A through-beam (or retroreflective) sensor loses its light when a part breaks the beam, so dark-on means part present.</p><p><b>4-wire sensors</b> often have two outputs. On many, WHT is the complement of BLK: one is on whenever the other is off, so you get L/O and D/O at the same time. On some, BLK is a PNP (sourcing) output and WHT is an NPN (sinking) output, so the same sensor works with either input type: land the wire that matches the input. On others WHT is a second, independent output or a diagnostic pin. Check the data sheet.</p><p>Most sensors have an output LED on the body. Like the module LED, it only tells you the sensor switched, not that the PLC saw it.</p>";
 TXT.sens_pnp={title:"PNP sensor (sourcing)",
   desc:"When a PNP sensor turns on, it connects its signal wire to +24 V, so it sources current. BRN and BLU power the sensor. It needs a sinking input, with COM to 0 V.",
   tryIt:"<b>Try this:</b> flip the Target switch. Diffuse means the target reflects the light back to the sensor; through-beam means the target blocks the beam. Then try Dark-on, Through-beam and 4-wire, and last of all the <b>Mistake</b> wiring, where the PNP sensor goes into a sourcing input.",
@@ -704,7 +704,7 @@ function buildCable(){
   document.getElementById("cable").innerHTML='<svg viewBox="0 0 360 150" role="img" aria-label="Sensor cable wire colors">'+o+'</svg>';
   document.getElementById("ctbl").innerHTML='<tr class="th"><td>M12 pin</td><td>Color</td><td>Use</td></tr>'+
     '<tr><td>1</td><td><span class="sw" style="background:'+WC.BRN+'"></span>BRN</td><td>+V supply, usually 10–30 VDC</td></tr>'+
-    '<tr><td>2</td><td><span class="sw" style="background:'+WC.WHT+'"></span>WHT</td><td>Second output: the complement of BLK (NC), an independent output, or diagnostics. Some 3-wire sensors put their only output here.</td></tr>'+
+    '<tr><td>2</td><td><span class="sw" style="background:'+WC.WHT+'"></span>WHT</td><td>Second output. Depending on the sensor: the complement of BLK (NC), a sinking (NPN) output while BLK is sourcing (PNP), an independent output, or diagnostics. Some 3-wire sensors put their only output here.</td></tr>'+
     '<tr><td>3</td><td><span class="sw" style="background:'+WC.BLU+'"></span>BLU</td><td>0 V (common)</td></tr>'+
     '<tr><td>4</td><td><span class="sw" style="background:'+WC.BLK+'"></span>BLK</td><td>Output (usually NO). On IO-Link sensors this is also the communication line.</td></tr>';
 }
