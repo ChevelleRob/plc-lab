@@ -56,4 +56,5 @@ Called "Timers & Addressing" through v1.7.
 
 ## Sinking & Sourcing (`sink-source/`)
 
+- **v1.1** Relay output: the relay coil and its link to the contact light up while the output bit is on. "Watch the words" note explains that M-switching comes from German *Masse* (ground)
 - **v1.0** First version. Basics: four battery, switch and bulb circuits, two wired correctly and two not. Inputs: sinking, sourcing and AC. Outputs: sourcing (PNP), sinking (NPN), triac and relay (24 VDC or 120 VAC). Wiring diagrams with animated current (back and forth on AC), a correct/mistake wiring choice on every DC page, and a table of voltage, current, LED and bit. Generic, not tied to a PLC brand

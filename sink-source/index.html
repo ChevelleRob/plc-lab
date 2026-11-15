@@ -207,6 +207,8 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .ladder .psu{fill:var(--surface2);stroke:var(--line);stroke-width:2}
 .ladder .mod{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
 .ladder .res{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .res.coil.on{fill:var(--liveglow);stroke:var(--live);filter:drop-shadow(0 0 4px var(--live))}
+.ladder .wr.link.on{stroke:var(--live)}
 .ladder .led{fill:#3A4650;stroke:var(--ink);stroke-width:1.5}
 .ladder .led.on{fill:var(--live);stroke:var(--live);filter:drop-shadow(0 0 5px var(--live))}
 .ladder .plbl{font-size:12px;font-weight:700;fill:var(--ink)}
@@ -245,7 +247,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 <body class="has-bar">
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Sinking &amp; sourcing</span><span class="ver">v1.0</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Sinking &amp; sourcing</span><span class="ver">v1.1</span></div>
     <div class="plats" role="group" aria-label="Section">
       <button data-sec="basics">Basics</button>
       <button data-sec="in">Inputs</button>
@@ -355,7 +357,7 @@ var TXT = {
     tryIt:"<b>Try this:</b> turn the output bit on with 24 VDC, then switch the supply to 120 VAC and do it again. Same module, same contact.",
     note:"<p><b>Relay outputs</b> switch AC or DC, at any voltage within the contact’s rating. Points that share a COM share one supply, so put different voltages on different commons.</p><p>Trade-offs: contacts take about 10 ms to move and wear out after a limited number of operations, so relays are a poor choice for fast cycling. They are a great choice for mixed voltages and small loads.</p>"}
 };
-var TERMS = "<p><b>Watch the words.</b> Manufacturers don’t all use “sinking” and “sourcing” the same way. Some label a module by the device it expects, and many European manuals say <b>P-switching</b> (PNP, sourcing) and <b>M-switching</b> (NPN, sinking) instead. When in doubt, read the wiring diagram in the module’s manual and check where COM goes.</p>";
+var TERMS = "<p><b>Watch the words.</b> Manufacturers don’t all use “sinking” and “sourcing” the same way. Some label a module by the device it expects, and many European manuals say <b>P-switching</b> and <b>M-switching</b> instead. These come from German: P-switching switches the <b>P</b>lus side (PNP, sourcing), and M-switching switches to <i><b>M</b>asse</i>, German for ground or 0 V (NPN, sinking). So it is M, not N. When in doubt, read the wiring diagram in the module’s manual and check where COM goes.</p>";
 
 /* ---------- Drawing helpers ---------- */
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
@@ -480,8 +482,9 @@ function buildDiag(){
     /* output switch inside the module between OUT 0 and its supply terminal */
     var a2=Math.min(YM,swY), b2=Math.max(YM,swY);
     o+=line(XM,YM,XI,YM)+line(XM,swY,XI,swY)+vSwitch(XI,a2,b2,state.bit)+txt(XI+20,(a2+b2)/2+4,sw,"tag");
-    if(k==="relay") o+='<rect class="res" x="'+(XI+10)+'" y="150" width="26" height="14" rx="2"/>'+txt(XI+23,182,"relay coil","tag","middle")+
-      '<line class="wr" x1="'+(XI+23)+'" y1="150" x2="'+(XI+23)+'" y2="'+((a2+b2)/2+8)+'" style="stroke-dasharray:3 3"/>';
+    /* relay coil: energized by the output bit, linked to the contact */
+    if(k==="relay") o+='<rect class="res coil'+(state.bit?' on':'')+'" x="'+(XI+10)+'" y="150" width="26" height="14" rx="2"/>'+txt(XI+23,182,"relay coil","tag","middle")+
+      '<line class="wr link'+(state.bit?' on':'')+'" x1="'+(XI+23)+'" y1="150" x2="'+(XI+23)+'" y2="'+((a2+b2)/2+8)+'" style="stroke-dasharray:3 3"/>';
     /* rails: the supply terminal of the module, and the lamp's return */
     o+=line(X0,YT,md.modTop?XM:(md.loadTop?XR:X0+1),YT)+line(X0,YB,md.modTop?(md.loadTop?X0+1:XR):XM,YB);
     /* load: rail -> XR -> lamp -> OUT 0 */
