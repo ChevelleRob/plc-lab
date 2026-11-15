@@ -224,7 +224,7 @@ body.has-bar .wrap{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.2</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.3</span></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -646,7 +646,7 @@ var TXT = {
     tryIt:"<b>Try this:</b> move the level and follow the chain: level, percent, signal, raw counts, scaled value. Switch PLCs: the raw counts change, the inches don’t. Then switch to the bench supply, like in the lab, and finally <b>cut the wire</b> in both 0–10 V and 4–20 mA."},
   out:{title:"Analog output: VFD pump speed", desc:"The program wants the pump at some speed in hertz. It scales hertz into raw counts, the output module turns counts into a signal, and the VFD turns the signal back into a speed.",
     tryIt:"<b>Try this:</b> set a speed and follow the chain backwards from the input page. Then cut the wire in both signal types and compare what the drive can tell."},
-  hart:{title:"HART: digital on top of analog", desc:"HART adds a small digital conversation on top of a normal 4–20 mA signal, on the same two wires. The PLC still reads the analog value; a HART-capable device can also talk to the transmitter.",
+  hart:{title:"HART: digital on top of analog", desc:"HART adds a small digital conversation on top of a normal 4–20 mA signal, on the same two wires. The PLC still reads the analog value; a HART-capable device can also talk to the transmitter, reading information like its tag name, range, units and diagnostics, or changing its settings.",
     tryIt:"<b>Try this:</b> turn the HART signal on and off. The wiggle is the digital data: slower waves are 1s, faster waves are 0s. It goes up and down equally, so the average current, the analog value, doesn’t change.",
     note:"<p>Standard analog input modules ignore HART completely, so it doesn’t hurt to have it on the loop. To use it you need a HART-capable input module, a HART multiplexer, or a handheld HART communicator clipped across the loop resistor.</p><p>Technicians use it most for setup and troubleshooting: reading the tag and range, checking diagnostics and re-ranging a transmitter without opening it up.</p>"}
 };
