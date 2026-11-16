@@ -10,6 +10,7 @@ The README is for students and visitors; maintenance rules live here.
 - Every change bumps the version of what changed (the tool, or the home page) and adds an entry to `CHANGELOG.md`. A tool's version appears in its header, on its home-page card, and in `CHANGELOG.md`; keep all three in sync. Home page changes bump the home page's version (in its header and `CHANGELOG.md`).
 - Keep the shared look: dark header bar, Barlow font, light/dark color tokens, mobile-first.
 - Don't put changelogs in HTML comments.
+- Track unconfirmed facts in `TO-VERIFY.md`. When a tool states something that came from memory rather than the instructor or a manual (ranges, menu names, part numbers, behaviors), add an unticked item under that tool with where it appears. When the instructor confirms an item, move it to **Confirmed**; when they correct it, fix the tool (with a version bump) and then move it.
 
 ## Adding a new tool
 
