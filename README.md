@@ -18,6 +18,7 @@ developed and will be added soon.
 | Compare | [`compare/`](compare/) | Greater than, less than, equal, not equal and in-range (LIM): an up/down count compared with 3, 5 or 8, or a range, on a live rung and a number line, for all five PLCs |
 | Sinking & Sourcing | [`sink-source/`](sink-source/) | How DC inputs and outputs are wired sinking or sourcing, plus AC inputs, triac and relay outputs, PNP/NPN sensors with wire colors and L/O-D/O, and setting sensor sensitivity. Animated current and wrong-wiring examples. Generic |
 | Analog I/O | [`analog/`](analog/) | 0–10 V and 4–20 mA wiring, raw counts and scaling on each PLC, broken-wire detection and HART, for all five PLCs |
+| Connecting | [`connect/`](connect/) | Step-by-step: cables and connection methods, software, I/O setup, download and upload (or write and read) for each PLC, plus a comparison table |
 
 ## Who it's for
 

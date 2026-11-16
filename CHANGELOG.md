@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v2.5** Added the Connecting card
 - **v2.4** Analog I/O card: v1.3
 - **v2.3** Analog I/O card: v1.2
 - **v2.2** Added the Analog I/O card (v1.1)
@@ -72,3 +73,7 @@ Called "Timers & Addressing" through v1.7.
 - **v1.2** Sliders moved into a fixed bar at the bottom of the screen. "Transmitter" label no longer under the tank. 0–10 V wiring: transmitter raised clear of the negative wire, more room for the voltmeter
 - **v1.1** SLC 500 note: the 1746-NIO4V output accepts up to 32767 but ignores the lowest 2 bits, so 32764 is the real maximum
 - **v1.0** First version, for all five PLCs. Wiring: 0–10 V, 2-wire and 4-wire 4–20 mA, and the 250 Ω / 1–5 V trick, with animated current and a 0–10 V vs 4–20 mA comparison. Input: tank level (0–120 in) from a transmitter, bench supply or loop calibrator, through signal, raw counts and the PLC's scaling instruction (SCP, NORM_X/SCALE_X, Math), with a graph and the same signal on all five PLCs. Output: VFD pump speed (0–60 Hz) the other way. Cut-the-wire button for broken-wire detection. HART page with the FSK signal on top of 4–20 mA
+
+## Connecting (`connect/`)
+
+- **v1.0** First version, for SLC 5/03 (1747-UIC to Channel 1, or RS-232 to Channel 0), CompactLogix 1769-L33ER (USB or Ethernet), S7-1200 1214C (Ethernet), CLICK Ethernet CPU (Ethernet or serial Port 1) and DL06 (serial Port 1). Five steps (connect, software, I/O setup, download, upload) with a cable diagram, where-to-click menu paths, a checklist remembered in the browser, and troubleshooting. Notes on less common connection methods. Compare table of all five, including download/upload vs write/read

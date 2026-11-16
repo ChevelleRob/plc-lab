@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PLC Lab: connecting to and programming PLCs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#E2E4DF; --surface:#F3F4F1; --surface2:#E9EBE6; --ink:#1D272F; --muted:#56626C;
+  --line:#BCC1BA; --wire:#8A939A; --live:#178F4C; --liveglow:rgba(23,143,76,.22);
+  --amber:#B97C00; --red:#C13D2B; --panel:#2A3640; --onpanel:#EEF1F2;
+  --c1:#1F5FA8; --c1bg:#DCE7F5; --c2:#9A6400; --c2bg:#F6E7C8; --c3:#177A45; --c3bg:#D6EEDF; --c4:#7A3C99; --c4bg:#EBDDF2;
+  --sans:"Barlow", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+    --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+    --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+    --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#141A1F; --surface:#1D252C; --surface2:#242E36; --ink:#E5EAED; --muted:#9AA7B1;
+  --line:#34414B; --wire:#5D6A74; --live:#3BD681; --liveglow:rgba(59,214,129,.22);
+  --amber:#F0B33A; --red:#F27360; --panel:#0F1418; --onpanel:#E5EAED;
+  --c1:#8DB8F0; --c1bg:#1D3150; --c2:#F0C068; --c2bg:#3D2F12; --c3:#7EDCA6; --c3bg:#173A28; --c4:#D3A6EA; --c4bg:#382546;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--c1);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+
+/* Header: a nameplate, like an engraved panel tag */
+header.top{background:var(--panel);color:var(--onpanel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top .inner{max-width:720px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand h1 a{color:inherit;text-decoration:none;display:inline-flex;align-items:baseline;gap:5px;padding:4px 0}
+.brand h1 a::before{content:"\2039";opacity:.6;font-weight:600}
+.brand h1 a:hover{text-decoration:underline;text-underline-offset:3px}
+.brand span{font-size:14px;opacity:.75}
+.brand .ver{margin-left:auto;font-family:var(--mono);font-size:12px;opacity:.6}
+.plats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:10px}
+.plats button{grid-column:span 2;min-width:0;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:7px 4px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plats button:nth-child(n+4){grid-column:span 3}
+.plats button[aria-pressed="true"]{background:var(--onpanel);color:var(--panel);border-color:var(--onpanel)}
+
+h2{font-size:21px;margin:22px 0 4px;font-weight:700}
+h3{font-size:17px;margin:20px 0 6px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.seg{display:flex;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{flex:1;border:0;background:transparent;padding:9px 6px;font-weight:600;cursor:pointer;border-right:1.5px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--muted);font-weight:500;margin:14px 0 6px}
+
+/* Ladder: the one bold element */
+.ladder{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;margin-top:14px;padding:6px 2px}
+.ladder svg{display:block;width:100%;height:auto}
+.ladder .rail{stroke:var(--live);stroke-width:4}
+.ladder .w{stroke:var(--wire);stroke-width:2.5;fill:none;transition:stroke .08s}
+.ladder .w.on{stroke:var(--live);stroke-width:3.5;filter:drop-shadow(0 0 3px var(--liveglow))}
+.ladder .cb{stroke:var(--ink);stroke-width:2.5}
+.ladder .cfill{fill:transparent}
+.ladder .cfill.on{fill:var(--live)}
+.ladder .coil{fill:none;stroke:var(--ink);stroke-width:2.5}
+.ladder .coil.on{stroke:var(--live);fill:var(--liveglow)}
+.ladder .box{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder text{fill:var(--ink);font-family:var(--sans);font-size:12px}
+.ladder .addr{font-family:var(--mono);font-size:10.5px;fill:var(--c1)}
+.ladder .tag{font-size:11px;fill:var(--muted)}
+.ladder .big{font-weight:700;font-size:15px}
+.ladder .val{font-family:var(--mono);font-size:12px;font-weight:700}
+.ladder .ind{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.ladder .ind.on{fill:var(--live);stroke:var(--live)}
+.ladder .indt{font-size:10px;font-weight:700}
+.ladder .indt.on{fill:#fff}
+.lamp{fill:var(--surface2);stroke:var(--ink);stroke-width:1.5}
+.lamp.on{fill:var(--live);filter:drop-shadow(0 0 6px var(--live))}
+
+/* Controls */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);color:var(--onpanel);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -3px 12px rgba(0,0,0,.25)}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.inds{display:flex;align-items:center;gap:14px;min-width:0}
+.pilot{display:flex;align-items:center;gap:8px}
+.pilot b{display:block;font-size:14px}
+.pilot small{display:block;font-family:var(--mono);font-size:11px;opacity:.75}
+.plamp{width:40px;height:40px;border-radius:50%;flex:none;background:#3A4650;box-shadow:inset 0 0 0 3px rgba(255,255,255,.15);transition:background .08s}
+.plamp.on{background:var(--live);box-shadow:0 0 16px var(--live)}
+.bits{display:flex;gap:8px}
+.bl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700}
+.bl i{width:16px;height:16px;border-radius:50%;background:#3A4650;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+.bl i.on{background:var(--live);box-shadow:0 0 8px var(--live)}
+.acts{display:flex;gap:14px;flex:none}
+.bar .switch,.bar .pb{flex:none;flex-direction:column;gap:3px;background:transparent;border:0;padding:0;color:var(--onpanel);text-align:center}
+.bar .knob{width:44px;height:44px;background:#1A2228}
+.bar .pb .cap{width:44px;height:44px}
+.bar .switch b,.bar .pb b{font-size:13px}
+.bar .switch small,.bar .pb small{color:var(--onpanel);opacity:.75;font-family:var(--mono);font-size:11px}
+body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.switch{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left}
+.knob{width:46px;height:46px;border-radius:50%;background:var(--panel);position:relative;flex:none;box-shadow:inset 0 0 0 3px var(--wire)}
+.knob::after{content:"";position:absolute;left:50%;top:7px;width:6px;height:32px;margin-left:-3px;border-radius:3px;background:var(--onpanel);transform:rotate(-40deg);transform-origin:50% 16px;transition:transform .15s}
+.switch[aria-pressed="true"] .knob::after{transform:rotate(40deg)}
+.switch[aria-pressed="true"] .knob{box-shadow:inset 0 0 0 3px var(--live)}
+.switch b{display:block;font-size:16px}
+.switch small{color:var(--muted);font-size:13px}
+.pb{flex:1 1 150px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;user-select:none;-webkit-user-select:none;touch-action:none}
+.pb .cap{width:46px;height:46px;border-radius:50%;background:var(--red);flex:none;box-shadow:0 4px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb.held .cap{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--red) 55%,#000)}
+.pb b{display:block;font-size:16px}
+.pb small{color:var(--muted);font-size:13px}
+
+.status{width:100%;border-collapse:collapse;margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;font-size:15px}
+.status td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+.status tr:first-child td{border-top:0}
+.status td:first-child{font-family:var(--mono);font-size:13px;color:var(--c1);white-space:nowrap}
+.status td.v{font-family:var(--mono);font-weight:700;white-space:nowrap;width:5.5em}
+.bit{display:inline-block;min-width:2.2em;text-align:center;border-radius:4px;padding:0 4px;background:var(--surface2);color:var(--muted)}
+.bit.on{background:var(--live);color:#fff}
+.status td.m{color:var(--muted);font-size:14px}
+
+.chartbox{margin-top:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:8px}
+.chartbox canvas{display:block;width:100%;height:210px}
+.note{margin-top:14px;padding:12px 14px;border-left:4px solid var(--amber);background:var(--surface);border-radius:0 8px 8px 0}
+.note p{margin:4px 0}
+.try{margin-top:12px;padding:12px 14px;border-left:4px solid var(--live);background:var(--surface);border-radius:0 8px 8px 0}
+
+.qtext code,.qexp code,.note code,.try code,p code{font-family:var(--mono);font-size:.9em;color:var(--c1)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* Counters: momentary pushbuttons, one cap color per job */
+.pb .cap,.pb.held .cap{background:var(--cap,var(--red))}
+.pb .cap{box-shadow:0 4px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.held .cap{box-shadow:0 1px 0 color-mix(in srgb,var(--cap,var(--red)) 55%,#000)}
+.pb.k-up{--cap:var(--live)} .pb.k-dn{--cap:var(--amber)} .pb.k-rs{--cap:var(--red)} .pb.k-ld{--cap:var(--c1)}
+.bar .acts{gap:10px}
+.bar .inds{gap:10px}
+@media (max-width:400px){ .pilot small{display:none} .bar .pb b{font-size:12px} }
+
+/* Compare: six instruction buttons in a 3 x 2 grid */
+.seg.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg.grid3 button:nth-child(3){border-right:0}
+.seg.grid3 button:nth-child(n+4){border-top:1.5px solid var(--line)}
+.seg.grid3 button{font-family:var(--mono);font-size:16px}
+.seg.grid3 button.wide{grid-column:1/-1;border-top:1.5px solid var(--line);border-right:0;font-family:var(--sans);font-size:15px}
+.ladder .cmpbox{transition:stroke .08s,fill .08s}
+.ladder .cmpbox.on{stroke:var(--live);fill:var(--liveglow)}
+/* Number line */
+.ladder .shade{fill:var(--c3bg)}
+.ladder .axis{stroke:var(--wire);stroke-width:2}
+.ladder .tick{font-family:var(--mono);font-size:12px;fill:var(--muted)}
+.ladder .bmark{font-family:var(--mono);font-size:12px;font-weight:700;fill:var(--c1)}
+.ladder .dot{fill:var(--surface);stroke:var(--ink);stroke-width:2.5}
+.ladder #dot.on .dot{fill:var(--live);stroke:var(--live);filter:drop-shadow(0 0 5px var(--live))}
+.ladder .dotv{font-family:var(--mono);font-size:9px;font-weight:700;fill:var(--ink)}
+.ladder #dot{transition:transform .12s}
+/* Results table */
+.tt td{text-align:center;font-family:var(--mono)}
+.tt tr.th td{font-family:var(--sans);font-weight:600;background:var(--surface2);color:var(--ink);font-size:14px}
+.tt tr.cur td{background:var(--liveglow)}
+.tt tr.cur td:first-child{box-shadow:inset 4px 0 0 var(--live)}
+.bar .cnt{font-family:var(--mono);font-size:18px;line-height:16px;min-width:2ch;text-align:center}
+@media (prefers-reduced-motion: reduce){.ladder #dot{transition:none}}
+
+/* Connecting */
+#stepSeg button{font-family:var(--sans);font-size:14px;padding:9px 2px}
+.cpu{margin:10px 0 0;font-size:14px;color:var(--muted)}
+.ladder .node{fill:var(--surface2);stroke:var(--ink);stroke-width:2}
+.ladder .node.pc{fill:var(--c1bg);stroke:var(--c1)}
+.ladder .node.plc{fill:var(--c3bg);stroke:var(--c3)}
+.ladder .nt{font-size:14px;font-weight:700;fill:var(--ink)}
+.ladder .ns{font-size:12px;fill:var(--muted)}
+.ladder .cab{stroke:var(--ink);stroke-width:4;stroke-linecap:round}
+.ladder .cl{font-size:12px;font-weight:600;fill:var(--c2)}
+.menus{display:grid;gap:6px;margin-top:4px}
+.menu{background:var(--surface);border:1.5px solid var(--line);border-left:4px solid var(--c1);border-radius:0 8px 8px 0;padding:8px 10px;font-size:15px}
+.checks{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px;counter-reset:ck}
+.checks li{counter-increment:ck;background:var(--surface);border:1.5px solid var(--line);border-radius:8px}
+.checks label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;cursor:pointer}
+.checks input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--live)}
+.checks span::before{content:counter(ck) ". ";font-weight:700;color:var(--muted)}
+.checks li.done{border-color:var(--live)}
+.checks li.done span{color:var(--muted)}
+.cprog{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:14px;color:var(--muted)}
+.ghostb{background:transparent;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.trouble{margin-top:14px;padding:12px 14px;border-left:4px solid var(--red);background:var(--surface);border-radius:0 8px 8px 0}
+.trouble .th2{display:block;margin-bottom:4px}
+.trouble ul{margin:0;padding-left:18px}
+.trouble li{margin:4px 0}
+/* Comparison table: first column stays put, the rest scroll sideways */
+.cmpwrap{overflow-x:auto;margin-top:12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);-webkit-overflow-scrolling:touch}
+.cmp{border-collapse:separate;border-spacing:0;font-size:15px;min-width:100%}
+.cmp th,.cmp td{padding:8px 10px;border-top:1px solid var(--line);text-align:left;vertical-align:top}
+.cmp thead th{border-top:0;background:var(--surface2);font-weight:700;white-space:nowrap}
+.cmp td{min-width:150px;border-left:1px solid var(--line)}
+.cmp td code{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--c1);white-space:nowrap}
+.cmp td small{display:block;color:var(--muted);font-size:13px;line-height:1.3;margin-top:2px}
+.cmp .rh{position:sticky;left:0;z-index:1;background:var(--surface2);width:112px;min-width:112px;max-width:112px;font-weight:600;font-size:14px;line-height:1.3;box-shadow:2px 0 0 var(--line)}
+.cmp thead .rh{z-index:2}
+.cmp tr.grp th{background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:12px 10px 4px}
+.cmp tr.grp td{background:var(--bg);border-left:0}
+.cmp tr.grp + tr th,.cmp tr.grp + tr td{border-top:0}
+.cmp tr.key td{background:var(--c2bg)}
+.cmp td{font-size:14px}
+.cmp td code{font-size:13px}
+.swipe{font-size:14px;margin-top:6px}
+body.wide .wrap{max-width:1040px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="inner">
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Connecting</span><span class="ver">v1.0</span></div>
+    <div class="plats" role="group" aria-label="PLC platform">
+      <button data-plat="slc">SLC 500</button>
+      <button data-plat="clx">CompactLogix</button>
+      <button data-plat="s7">Siemens S7</button>
+      <button data-plat="click">CLICK</button>
+      <button data-plat="dl06">DL06</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="seg grid3" id="stepSeg" role="group" aria-label="Step">
+      <button data-step="conn">1 Connect</button><button data-step="soft">2 Software</button><button data-step="io">3 I/O setup</button>
+      <button data-step="down">4 Download</button><button data-step="up">5 Upload</button><button data-step="cmp">Compare all</button>
+    </div>
+    <p class="cpu" id="cpu"></p>
+    <div id="methWrap" hidden>
+      <div class="lbl">Connection</div>
+      <div class="seg" id="methSeg" role="group" aria-label="Connection method"></div>
+    </div>
+    <h2 id="title"></h2>
+    <p id="desc"></p>
+    <div class="ladder" id="chain" hidden></div>
+    <div id="menuWrap" hidden><div class="lbl">Where to click</div><div class="menus" id="menus"></div></div>
+    <div id="checkWrap">
+      <div class="lbl" id="checkLbl">Checklist</div>
+      <ol class="checks" id="checks"></ol>
+      <div class="cprog"><span id="cprog"></span><button class="ghostb" id="clearBtn">Clear checks</button></div>
+    </div>
+    <div class="trouble" id="trouble" hidden></div>
+    <div id="cmpWrap" hidden>
+      <p class="swipe muted" id="swipeHint">Swipe the table sideways to see all five PLCs →</p>
+      <div class="cmpwrap" id="cmpBox"></div>
+    </div>
+    <div class="note" id="noteBox"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+var store = {
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+var PLATS=["slc","clx","s7","click","dl06"], STEPS=["conn","soft","io","down","up","cmp"];
+var state = { plat: store.get("rl-plat") || "slc", step: store.get("cn-step") || "conn", meth:{} };
+if(PLATS.indexOf(state.plat)<0) state.plat="slc";
+if(STEPS.indexOf(state.step)<0) state.step="conn";
+var checks={}; try{ checks=JSON.parse(store.get("cn-checks")||"{}")||{} }catch(e){ checks={} }
+
+/* ---------- The guide, one PLC at a time ----------
+   chain: nodes top to bottom (PC first), cables between them. */
+var P = {
+  slc:{ name:"SLC 500", cpu:"SLC 5/03 (1747-L532) · RSLogix 500 + RSLinx Classic",
+    meth:[
+      {id:"uic", label:"1747-UIC → Channel 1",
+        chain:[["PC","USB port"],["1747-UIC","USB to DH-485 / RS-232"],["SLC 5/03","Channel 1: DH-485 (RJ45)"]], cables:["USB cable (A to B)","1747-C13 cable (DH-485)"],
+        desc:"The 1747-UIC turns the PC’s USB port into a DH-485 port. Plug it into Channel 1, the RJ45-style DH-485 port on the 5/03.",
+        checks:["Install the 1747-UIC driver on the PC, then plug the UIC into a USB port.","Connect the UIC’s DH-485 port to <b>Channel 1</b> on the 5/03 with the 1747-C13 cable.","Open <b>RSLinx Classic</b> → Communications → Configure Drivers. Add the <b>1747-UIC (DH-485)</b> driver and start it.","Open <b>RSWho</b> and expand the driver. The 5/03 should appear, normally at <b>node 1</b>.","Leave RSLinx running: RSLogix 500 talks through it."],
+        trouble:["<b>No driver in the list:</b> the UIC’s Windows driver isn’t installed, or RSLinx is too old to know the UIC.","<b>Driver runs but RSWho is empty:</b> check the cable is in Channel 1, not Channel 0, and that the PLC is powered.","<b>Node conflicts:</b> RSLinx uses its own node number on DH-485. It must not match the PLC’s (usually 1)."]},
+      {id:"ch0", label:"RS-232 → Channel 0",
+        chain:[["PC","USB port"],["USB-to-serial adapter","Shows up as a COM port"],["SLC 5/03","Channel 0: RS-232 (9-pin)"]], cables:["USB cable","1747-CP3 null-modem cable"],
+        desc:"Channel 0 is the 9-pin RS-232 port. It talks DF1 out of the box.",
+        checks:["Plug in the USB-to-serial adapter and note its COM port number in Device Manager.","Connect the 1747-CP3 null-modem cable from the adapter to <b>Channel 0</b>.","RSLinx Classic → Configure Drivers → add <b>RS-232 DF1 devices</b>, pick the COM port and press <b>Auto-Configure</b>.","RSWho should show the 5/03 under the DF1 driver."],
+        trouble:["<b>Auto-Configure fails:</b> wrong COM port, a straight-through cable instead of the null-modem CP3, or Channel 0 was set to something other than DF1 Full-Duplex."]}
+    ],
+    soft:{desc:"RSLogix 500 writes the program. RSLinx Classic handles the communication underneath it.",
+      checks:["Install <b>RSLinx Classic</b> (the Lite version that comes with RSLogix 500 is enough).","Install <b>RSLogix 500</b> Starter or Standard. Micro Starter Lite will not open SLC 500 projects.","New project: pick the processor type <b>1747-L532 5/03 CPU</b> (with the right series), which must match the real CPU."],
+      trouble:["<b>Processor type mismatch on download:</b> the project’s processor doesn’t match the real one. Change it under Controller Properties."]},
+    io:{desc:"The SLC needs to know which module is in which slot. RSLogix 500 can read that from the rack.",
+      menus:["Project tree → Controller → <b>I/O Configuration</b>","Online: <b>Read IO Config</b> button"],
+      checks:["Open <b>I/O Configuration</b> in the project tree.","Pick the rack size (4, 7, 10 or 13 slots). Slot 0 is always the processor.","Online: press <b>Read IO Config</b> and it fills in every module. Offline: drag each module into its slot.","Configure modules that need it, such as analog channels (<b>Adv Config</b>)."],
+      trouble:["<b>I/O fault after download</b> (the CPU’s fault light): a slot in the program doesn’t match the real rack. Read the I/O config again."]},
+    down:{word:"Download", desc:"<b>Download</b> sends the program from the PC to the PLC.",
+      menus:["Comms → <b>System Comms</b> → pick the PLC → <b>Download</b>","or Comms → <b>Download</b> once a path is set"],
+      checks:["Set the key switch to <b>REM</b> (or PROG). In RUN the PLC refuses a download.","Comms → System Comms, select the 5/03 under your driver and press <b>Download</b>.","Accept the prompt to change to Program mode.","After the download, say <b>yes</b> to going online, then switch to Run (Mode menu in REM, or the key to RUN)."],
+      trouble:["<b>Processor in RUN mode:</b> turn the key to REM or PROG.","<b>Unable to find a path:</b> RSLinx driver stopped or wrong one picked in System Comms."]},
+    up:{word:"Upload", desc:"<b>Upload</b> copies the program from the PLC to the PC.",
+      menus:["Comms → <b>System Comms</b> → pick the PLC → <b>Upload</b>"],
+      checks:["Comms → System Comms, select the 5/03 and press <b>Upload</b>.","RSLogix 500 asks if a project file on disk matches. Pick the original <b>.RSS</b> if you have it.","Save the uploaded project under a new name."],
+      trouble:["<b>No comments or symbols after upload:</b> the SLC doesn’t store documentation. Comments live only in the .RSS file on the PC, so keep it safe."]},
+    note:"<p><b>Other ways to connect a 5/03:</b> the older <b>1747-PIC</b> (RS-232 to DH-485) does the same job as the UIC. The UIC can also be used in RS-232 mode into Channel 0. Other SLC CPUs differ: the <b>5/04</b> adds DH+, and the <b>5/05</b> has Ethernet.</p><p>The key switch has three positions: <b>RUN</b> (runs, no changes), <b>PROG</b> (stopped, can download) and <b>REM</b> (remote: the software chooses).</p>",
+    terms:{conn:"1747-UIC to Channel 1 (DH-485)", cable:"USB + 1747-C13", soft:"RSLogix 500 + RSLinx Classic", find:"RSWho in RSLinx", to:"Download", from:"Upload", mode:"Key: RUN / REM / PROG", io:"Read IO Config, or set slots by hand", docs:"Not stored in the PLC", file:".RSS"} },
+
+  clx:{ name:"CompactLogix", cpu:"CompactLogix 1769-L33ER · Studio 5000 Logix Designer + RSLinx Classic",
+    meth:[
+      {id:"usb", label:"USB",
+        chain:[["PC","USB port"],["1769-L33ER","USB port (front)"]], cables:["USB cable (A to B)"],
+        desc:"The USB port is the quickest way in, and the usual way to set up a new controller before it has an IP address.",
+        checks:["Connect a standard USB A-to-B cable to the controller’s USB port.","Windows installs the driver the first time (let it finish).","In RSLinx Classic, the controller shows up under the <b>USB</b> driver in RSWho. No driver to configure."],
+        trouble:["<b>Nothing under USB:</b> try another cable or port; some charge-only cables have no data wires."]},
+      {id:"eth", label:"Ethernet",
+        chain:[["PC","Ethernet port, same subnet"],["Switch (optional)",""],["1769-L33ER","Ethernet port"]], cables:["Ethernet patch cable","Ethernet patch cable"],
+        desc:"Ethernet (EtherNet/IP) is how it is normally connected in a machine. The PC and the controller must be on the same subnet.",
+        checks:["Give the controller an IP address. A new one has none: it asks for one by BOOTP/DHCP. Set it with the <b>BOOTP-DHCP tool</b>, or over USB in RSLinx or Logix Designer.","Set the PC’s Ethernet adapter to a fixed address in the same subnet, e.g. PLC 192.168.1.10, PC 192.168.1.100, mask 255.255.255.0.","RSLinx Classic → Configure Drivers → add <b>EtherNet/IP Driver</b> (browses the subnet) or <b>Ethernet devices</b> (type the IP).","Find the controller in RSWho."],
+        trouble:["<b>Can’t find it on Ethernet:</b> wrong subnet on the PC, or the controller still has no IP. Connect by USB and look at its port settings."]}
+    ],
+    soft:{desc:"Studio 5000 Logix Designer writes the program; RSLinx Classic (or FactoryTalk Linx) handles communication.",
+      checks:["Check the controller’s <b>firmware revision</b> (RSLinx shows it).","Install a <b>Studio 5000 Logix Designer</b> version with the same <b>major revision</b>: a v32 controller needs a v32 project.","New project: controller type <b>1769-L33ER</b> and the matching revision."],
+      trouble:["<b>Revision mismatch on download:</b> either change the project’s revision or update the controller’s firmware with <b>ControlFLASH</b>. Logix Designer can’t download to a different major revision."]},
+    io:{desc:"Logix only knows about modules you add to the I/O Configuration tree. Each one creates its tags automatically, like Local:1:I.",
+      menus:["Controller Organizer → I/O Configuration → <b>1769 Bus</b> → right-click → <b>New Module</b>"],
+      checks:["Under I/O Configuration, right-click the <b>1769 Bus</b> and choose New Module.","Add each module in the order it sits after the controller: slot 1, 2, 3…","Open each module’s properties to set things like analog ranges and data format.","Newer versions can also discover modules while online."],
+      trouble:["<b>Yellow triangles on modules when online:</b> the module in the tree doesn’t match the hardware in that slot, or a module is missing."]},
+    down:{word:"Download", desc:"<b>Download</b> sends the project from the PC to the controller.",
+      menus:["Communications → <b>Who Active</b> → pick the controller → <b>Download</b>","or the online toolbar: Go Online → Download"],
+      checks:["Key switch to <b>REM</b> (or PROG).","Communications → Who Active, select the controller (under USB or Ethernet) and press <b>Set Project Path</b>.","Press <b>Download</b> and accept the warnings.","When asked, change the controller back to <b>Remote Run</b>."],
+      trouble:["<b>Revision mismatch:</b> see step 2.","<b>Key in RUN:</b> the download is refused. Turn it to REM."]},
+    up:{word:"Upload", desc:"<b>Upload</b> copies the project from the controller to the PC.",
+      menus:["Communications → <b>Who Active</b> → pick the controller → <b>Upload</b>"],
+      checks:["Communications → Who Active, select the controller.","Press <b>Upload</b> and save it as a new <b>.ACD</b> file.","Tag names come with it, because Logix stores them in the controller."],
+      trouble:["<b>Can’t open the upload:</b> your Logix Designer version must match the controller’s revision, same as for downloads."]},
+    note:"<p><b>Other ways in:</b> older CompactLogix such as the <b>1769-L32E / L35E</b> have a 9-pin RS-232 serial port (DF1) as well as Ethernet. Many CompactLogix can load a program from their <b>SD card</b> at power-up.</p><p>The USB port is meant for setup and occasional programming, not as a permanent connection.</p>",
+    terms:{conn:"USB, or Ethernet (EtherNet/IP)", cable:"USB A-B, or Ethernet patch", soft:"Studio 5000 Logix Designer + RSLinx", find:"Who Active / RSWho", to:"Download", from:"Upload", mode:"Key: RUN / REM / PROG", io:"Add modules to the I/O tree", docs:"Tag names stored in the controller", file:".ACD"} },
+
+  s7:{ name:"Siemens S7", cpu:"S7-1200 CPU 1214C · TIA Portal (STEP 7 Basic or Professional)",
+    meth:[
+      {id:"eth", label:"Ethernet (PROFINET)",
+        chain:[["PC","Ethernet port"],["Switch (optional)",""],["CPU 1214C","PROFINET port (X1)"]], cables:["Ethernet patch cable","Ethernet patch cable"],
+        desc:"The S7-1200 is programmed over its PROFINET Ethernet port. A normal patch cable works, straight to the PC or through a switch.",
+        checks:["Connect an Ethernet cable from the PC to the CPU’s PROFINET port.","In TIA Portal, <b>Online → Accessible devices</b>: pick the PG/PC interface type <b>PN/IE</b> and your PC’s Ethernet adapter, then <b>Start search</b>.","The CPU appears with its IP address, or none if it is brand new.","If the CPU and PC are on different subnets, TIA offers to add a temporary IP address to the PC. Accept it, or set the PC’s IP by hand."],
+        trouble:["<b>Nothing found:</b> wrong network adapter picked, or a firewall/VPN blocking the search.","<b>Found but can’t go online:</b> subnet mismatch. Let TIA add the temporary address."]}
+    ],
+    soft:{desc:"TIA Portal with STEP 7 (Basic is enough for the S7-1200) does everything: hardware, program, online.",
+      checks:["Check the CPU’s <b>firmware version</b> (Accessible devices or the CPU’s web server shows it).","Install a <b>TIA Portal</b> version that supports that firmware. Newer firmware needs newer TIA.","New project → Add new device → pick the CPU by its <b>order number</b> and <b>firmware version</b>, from the label on the CPU."],
+      trouble:["<b>Firmware not in the list:</b> your TIA Portal is too old for this CPU. Pick the nearest older version, or update TIA."]},
+    io:{desc:"Device configuration holds the CPU, its signal boards and signal modules, and their I/O addresses.",
+      menus:["Project tree → PLC → <b>Device configuration</b>","Add an <b>unspecified CPU</b> → <b>detect</b> to read real hardware"],
+      checks:["Open <b>Device configuration</b>.","Drag signal boards onto the front of the CPU and signal modules to its right, matching the real order.","Or: add an <b>Unspecified CPU 1200</b>, go online and use <b>detect</b> to read the real hardware.","Check each module’s I/O addresses (%I and %Q) in its properties. Turn on system and clock memory if you want the first-scan bit."],
+      trouble:["<b>Download stops with a hardware mismatch:</b> a module or firmware version in Device configuration doesn’t match the real one."]},
+    down:{word:"Download to device", desc:"<b>Download to device</b> sends hardware and program from the PC to the CPU.",
+      menus:["Select the PLC → <b>Download to device</b> (Ctrl+L)","Online → Extended download to device (first time)"],
+      checks:["Select the PLC in the project tree and press <b>Download to device</b>. The first time, choose the interface and the CPU in the extended dialog.","TIA compiles, then shows the <b>Load preview</b>. Check the actions, such as <b>Stop modules</b>.","Press <b>Load</b>.","At the end choose <b>Start module</b> and <b>Finish</b>. The S7-1200 has no mode switch: RUN and STOP are set from TIA."],
+      trouble:["<b>Load preview has errors:</b> fix the compile errors first; TIA won’t load a program that doesn’t compile.","<b>Protection level:</b> a password-protected CPU asks for the password."]},
+    up:{word:"Upload from device", desc:"<b>Upload from device</b> copies hardware and program from the CPU to the PC.",
+      menus:["Online → <b>Upload device as new station</b> (hardware and software)","Select the PLC → Upload from device (software) for an existing project"],
+      checks:["To read a PLC you have no project for: open an empty project, then <b>Online → Upload device as new station</b>.","Search, select the CPU and press <b>Upload</b>.","Symbols and comments come with it: the S7-1200 stores them on the CPU."],
+      trouble:["<b>Upload greyed out:</b> select the PLC itself in the project tree, not a block."]},
+    note:"<p><b>Other ways in:</b> the S7-1200 is Ethernet-only for programming. A <b>SIMATIC Memory Card</b> can also carry a program into a CPU as a transfer card, which is handy when no laptop can connect.</p><p>Siemens’ own word is <b>load</b>: Download to device, Upload from device, Load preview.</p>",
+    terms:{conn:"Ethernet (PROFINET)", cable:"Ethernet patch", soft:"TIA Portal (STEP 7)", find:"Accessible devices", to:"Download to device", from:"Upload from device", mode:"No switch: RUN/STOP from TIA", io:"Device configuration (or detect)", docs:"Symbols and comments stored on the CPU", file:"TIA project (.ap17, .ap18 …)"} },
+
+  click:{ name:"CLICK", cpu:"CLICK Ethernet CPU · CLICK Programming Software (free)",
+    meth:[
+      {id:"eth", label:"Ethernet",
+        chain:[["PC","Ethernet port"],["Switch (optional)",""],["CLICK CPU","Ethernet port"]], cables:["Ethernet patch cable","Ethernet patch cable"],
+        desc:"Ethernet CLICK CPUs are programmed over their Ethernet port, straight from the PC or through a switch.",
+        checks:["Connect an Ethernet cable from the PC to the CPU.","Open the CLICK software and choose <b>Connect to PLC</b>.","Pick the Ethernet adapter. The software lists every CLICK it finds, with its IP address.","If the CLICK is on a different subnet, the dialog lets you change the CLICK’s IP address (or change the PC’s)."],
+        trouble:["<b>Found but won’t connect:</b> subnet mismatch. Change the CLICK’s IP from the connect dialog.","<b>Not found:</b> firewall blocking the search, or the wrong adapter picked."]},
+      {id:"ser", label:"Serial (Port 1)",
+        chain:[["PC","USB port"],["USB-to-serial adapter","COM port"],["CLICK CPU","Port 1 (RJ12)"]], cables:["USB cable","EA-MG-PGM-CBL (RJ12 to 9-pin)"],
+        desc:"Every CLICK CPU has an RS-232 programming port, Port 1, an RJ12 phone-style jack.",
+        checks:["Connect the EA-MG-PGM-CBL to Port 1, and to a USB-to-serial adapter (or use AutomationDirect’s USB-PGM-CBL).","Connect to PLC → choose the <b>COM port</b>.","Leave the communication settings at the defaults unless Port 1 was changed."],
+        trouble:["<b>No response:</b> wrong COM port, or Port 1’s settings were changed in the program."]}
+    ],
+    soft:{desc:"CLICK Programming Software is a free download from AutomationDirect and does everything.",
+      checks:["Download and install the <b>CLICK Programming Software</b>.","New project: pick your <b>CPU model</b> (the part number on the CPU)."],
+      trouble:["<b>Older software won’t list a new CPU:</b> update the CLICK software."]},
+    io:{desc:"CLICK finds its own modules. The software shows them in the System Configuration.",
+      menus:["Setup → <b>System Configuration</b>"],
+      checks:["Connect to the PLC: the software reads the installed modules automatically.","Open <b>System Configuration</b> to see each slot and its addresses (X101, Y201…).","Set up analog modules (ranges, scaling) there."],
+      trouble:["<b>Mismatch warning when writing:</b> the modules in the project don’t match the PLC. Let the software update the project from the PLC."]},
+    down:{word:"Write Project into PLC", desc:"<b>Write</b> sends the project from the PC to the PLC.",
+      menus:["PLC → <b>Write Project into PLC</b>"],
+      checks:["Connect to the PLC.","PLC → <b>Write Project into PLC</b>.","The software offers to switch the PLC to STOP for the transfer and back to RUN after. The CPU’s RUN/STOP switch must be in <b>RUN</b> for the software to change modes."],
+      trouble:["<b>Can’t switch modes:</b> the switch on the CPU is in STOP. Move it to RUN and let the software control it."]},
+    up:{word:"Read Project from PLC", desc:"<b>Read</b> copies the project from the PLC to the PC.",
+      menus:["PLC → <b>Read Project from PLC</b>"],
+      checks:["Connect to the PLC.","PLC → <b>Read Project from PLC</b>.","Save it as a <b>.ckp</b> project."],
+      trouble:["<b>Nicknames missing:</b> check the project was written with them. Keep the .ckp file as your master copy anyway."]},
+    note:"<p><b>Other ways in:</b> every CLICK CPU, Ethernet or not, can be programmed through serial <b>Port 1</b> (choose Serial above). Non-Ethernet CPUs only have the serial port.</p><p>AutomationDirect says <b>Write</b> and <b>Read</b> where Allen-Bradley says Download and Upload.</p>",
+    terms:{conn:"Ethernet, or serial Port 1", cable:"Ethernet patch, or EA-MG-PGM-CBL", soft:"CLICK Programming Software (free)", find:"Connect to PLC dialog", to:"Write Project into PLC", from:"Read Project from PLC", mode:"RUN/STOP switch (RUN lets software choose)", io:"Automatic (System Configuration)", docs:"Project stored in the PLC", file:".ckp"} },
+
+  dl06:{ name:"DL06", cpu:"DirectLOGIC DL06 · DirectSOFT",
+    meth:[
+      {id:"p1", label:"Serial (Port 1)",
+        chain:[["PC","USB port"],["USB-to-serial adapter","COM port"],["DL06","Port 1 (RJ12)"]], cables:["USB cable","D2-DSCBL (RJ12 to 9-pin)"],
+        desc:"Port 1 is the DL06’s RS-232 programming port, an RJ12 phone-style jack on the front.",
+        checks:["Connect the D2-DSCBL cable to <b>Port 1</b> and to a USB-to-serial adapter.","Start DirectSOFT and open the <b>Link Wizard</b> (Comm Links).","Choose the COM port and the <b>K-sequence</b> protocol, and let the wizard auto-detect the PLC.","Name and save the link; projects use it to go online."],
+        trouble:["<b>Link Wizard finds nothing:</b> wrong COM port, or the USB adapter’s driver isn’t installed.","<b>Port 1 is fixed</b> (9600 baud, K-sequence), so a failure is almost always the PC side or the cable."]}
+    ],
+    soft:{desc:"DirectSOFT programs the whole DirectLOGIC family. A free version handles small programs; larger ones need a license.",
+      checks:["Install <b>DirectSOFT</b>.","Create the link first (step 1), then a project for a <b>DL06</b>."],
+      trouble:["<b>Program too big to save or write:</b> the free version has a size limit."]},
+    io:{desc:"There is nothing to set up for discrete I/O. The built-in points are fixed and option cards are addressed automatically by slot.",
+      menus:["(No I/O configuration screen for discrete I/O)"],
+      checks:["Built-in I/O is always <b>X0–X23</b> and <b>Y0–Y17</b>.","Option cards are addressed by slot automatically: slot 1 starts at <b>X100/Y100</b>, slot 2 at X200, and so on.","Analog cards are set up in the program, using the pointer method."],
+      trouble:["<b>Analog reads 0:</b> the pointer setup rungs are missing or point to the wrong V-memory."]},
+    down:{word:"Write to PLC", desc:"<b>Write</b> sends the program from the PC to the PLC.",
+      menus:["PLC menu / toolbar → <b>Write to PLC</b>"],
+      checks:["Go online with the link from step 1.","Put the PLC in <b>STOP</b> (Program) mode.","<b>Write to PLC</b>.","Put it back in RUN."],
+      trouble:["<b>Write refused:</b> the PLC is in RUN. Change the mode first."]},
+    up:{word:"Read from PLC", desc:"<b>Read</b> copies the program from the PLC to the PC.",
+      menus:["PLC menu / toolbar → <b>Read from PLC</b>"],
+      checks:["Go online and choose <b>Read from PLC</b>.","Save it as a new project.","Expect bare addresses: nicknames and comments are saved in the project on the PC, not in the DL06."],
+      trouble:["<b>No documentation after a read:</b> normal for the DL06. Keep the project files from the PC that wrote it."]},
+    note:"<p><b>Other ways in:</b> <b>Port 2</b> (the 15-pin port) can also be used for programming. An <b>H0-ECOM100</b> option card adds Ethernet. The <b>D2-HPP</b> handheld programmer plugs into Port 1 for quick changes without a PC.</p><p>AutomationDirect says <b>Write</b> and <b>Read</b> where Allen-Bradley says Download and Upload.</p>",
+    terms:{conn:"Serial Port 1 (RS-232)", cable:"D2-DSCBL + USB-to-serial", soft:"DirectSOFT", find:"Link Wizard", to:"Write to PLC", from:"Read from PLC", mode:"STOP / RUN", io:"Nothing to set: fixed and by slot", docs:"Kept on the PC, not in the PLC", file:"DirectSOFT project"} }
+};
+var STEPTITLE={conn:"Connect the PC to the PLC",soft:"Software you need",io:"Set up the I/O",down:"Send the program to the PLC",up:"Get the program from the PLC",cmp:"All five side by side"};
+
+/* ---------- Drawing the cable chain ---------- */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function buildChain(m){
+  var nodes=m.chain, o="", y=10, W=360, bw=200, x=(W-bw)/2, bh=46, gap=50;
+  nodes.forEach(function(n,i){
+    var pc=i===0, plc=i===nodes.length-1;
+    o+='<rect class="node'+(pc?' pc':plc?' plc':'')+'" x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="8"/>'+
+       '<text class="nt" x="'+(W/2)+'" y="'+(y+(n[1]?20:28))+'" text-anchor="middle">'+esc(n[0])+'</text>'+
+       (n[1]?'<text class="ns" x="'+(W/2)+'" y="'+(y+36)+'" text-anchor="middle">'+esc(n[1])+'</text>':'');
+    if(i<nodes.length-1){
+      o+='<line class="cab" x1="'+(W/2)+'" y1="'+(y+bh)+'" x2="'+(W/2)+'" y2="'+(y+bh+gap)+'"/>'+
+         '<text class="cl" x="'+(W/2+12)+'" y="'+(y+bh+gap/2+4)+'">'+esc(m.cables[i]||"")+'</text>';
+    }
+    y+=bh+gap;
+  });
+  var H=y-gap+10;
+  var el=document.getElementById("chain"); el.hidden=false;
+  el.innerHTML='<svg viewBox="0 0 360 '+H+'" role="img" aria-label="Connection from the PC to the PLC">'+o+'</svg>';
+}
+
+/* ---------- Checklist: ticks are remembered in this browser ---------- */
+function ckey(i){ var m=state.step==="conn"?curMeth().id:""; return state.plat+"|"+state.step+"|"+m+"|"+i }
+function saveChecks(){ store.set("cn-checks",JSON.stringify(checks)) }
+function curMeth(){ var p=P[state.plat], id=state.meth[state.plat]; return p.meth.filter(function(m){return m.id===id})[0]||p.meth[0] }
+function buildChecks(items){
+  var ol=document.getElementById("checks");
+  ol.innerHTML=items.map(function(t,i){ var k=ckey(i), on=!!checks[k];
+    return '<li class="'+(on?'done':'')+'"><label><input type="checkbox" data-i="'+i+'"'+(on?' checked':'')+'><span>'+t+'</span></label></li>' }).join("");
+  progress(items.length);
+}
+function progress(n){
+  var c=0; for(var i=0;i<n;i++) if(checks[ckey(i)]) c++;
+  document.getElementById("cprog").textContent = c+" of "+n+" done"+(c===n&&n?" ✓":"");
+}
+
+/* ---------- Compare table ---------- */
+var ROWS=[["Connection","conn"],["Cable","cable"],["Software","soft"],["Find the PLC","find"],["PC → PLC","to"],["PLC → PC","from"],["Run / program mode","mode"],["I/O setup","io"],["Comments and tag names","docs"],["Project file","file"]];
+function buildCompare(){
+  var h='<table class="cmp"><thead><tr><th class="rh" scope="col"> </th>'+PLATS.map(function(k){return '<th scope="col">'+P[k].name+'</th>'}).join("")+'</tr></thead><tbody>';
+  ROWS.forEach(function(r){
+    h+='<tr'+(r[1]==="to"||r[1]==="from"?' class="key"':'')+'><th class="rh" scope="row">'+r[0]+'</th>'+PLATS.map(function(k){return '<td>'+esc(P[k].terms[r[1]])+'</td>'}).join("")+'</tr>';
+  });
+  document.getElementById("cmpBox").innerHTML=h+'</tbody></table>';
+  var b=document.getElementById("cmpBox"); document.getElementById("swipeHint").hidden = b.scrollWidth<=b.clientWidth+2;
+}
+
+/* ---------- Render ---------- */
+function render(){
+  var p=P[state.plat], st=state.step, cmp=st==="cmp";
+  document.querySelectorAll(".plats button").forEach(function(b){b.setAttribute("aria-pressed",String(!cmp&&b.dataset.plat===state.plat))});
+  document.querySelectorAll("#stepSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.step===st))});
+  document.body.classList.toggle("wide",cmp);
+  document.getElementById("cpu").textContent = cmp ? "" : p.cpu;
+  document.getElementById("cpu").hidden = cmp;
+  document.getElementById("title").textContent = cmp ? STEPTITLE.cmp : STEPTITLE[st]+(st==="down"||st==="up"?": "+p[st].word:"");
+  document.getElementById("cmpWrap").hidden=!cmp;
+  document.getElementById("checkWrap").hidden=cmp;
+  document.getElementById("chain").hidden=true;
+  document.getElementById("methWrap").hidden=true;
+  var tr=document.getElementById("trouble"), mw=document.getElementById("menuWrap");
+  if(cmp){
+    document.getElementById("desc").innerHTML="Same jobs, five ways of naming them. The highlighted rows are the words for sending a program to the PLC and getting it back: Allen-Bradley and Siemens say <b>download</b> and <b>upload</b>, AutomationDirect says <b>write</b> and <b>read</b>.";
+    tr.hidden=true; mw.hidden=true; buildCompare();
+    document.getElementById("noteBox").innerHTML="<p><b>Download vs upload:</b> think of the PLC as “down” on the machine and the PC as “up” above it. Download goes down to the PLC; upload comes up to the PC.</p>";
+    return;
+  }
+  var d, items, trouble, menus;
+  if(st==="conn"){
+    var m=curMeth();
+    if(p.meth.length>1){
+      document.getElementById("methWrap").hidden=false;
+      document.getElementById("methSeg").innerHTML=p.meth.map(function(x){return '<button data-m="'+x.id+'" aria-pressed="'+(x.id===m.id)+'">'+x.label+'</button>'}).join("");
+    }
+    d=m.desc; items=m.checks; trouble=m.trouble; menus=null; buildChain(m);
+  } else {
+    var s=p[st]; d=s.desc; items=s.checks; trouble=s.trouble; menus=s.menus;
+  }
+  document.getElementById("desc").innerHTML=d;
+  mw.hidden=!menus;
+  if(menus) document.getElementById("menus").innerHTML=menus.map(function(x){return '<div class="menu">'+x+'</div>'}).join("");
+  document.getElementById("checkLbl").textContent = "Checklist";
+  buildChecks(items);
+  tr.hidden=!trouble;
+  if(trouble) tr.innerHTML='<b class="th2">When it doesn’t work</b><ul>'+trouble.map(function(x){return '<li>'+x+'</li>'}).join("")+'</ul>';
+  document.getElementById("noteBox").innerHTML=p.note;
+}
+document.querySelector(".plats").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.plat=b.dataset.plat; store.set("rl-plat",state.plat); if(state.step==="cmp"){ state.step="conn"; store.set("cn-step","conn"); } render();});
+document.getElementById("stepSeg").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.step=b.dataset.step; store.set("cn-step",state.step); render(); window.scrollTo(0,0);});
+document.getElementById("methSeg").addEventListener("click",function(e){var b=e.target.closest("button"); if(!b) return; state.meth[state.plat]=b.dataset.m; render();});
+document.getElementById("checks").addEventListener("change",function(e){
+  var c=e.target; if(!c.matches("input[type=checkbox]")) return; var k=ckey(+c.dataset.i);
+  if(c.checked) checks[k]=1; else delete checks[k]; saveChecks();
+  c.closest("li").classList.toggle("done",c.checked); progress(document.querySelectorAll("#checks li").length);
+});
+document.getElementById("clearBtn").addEventListener("click",function(){
+  var n=document.querySelectorAll("#checks li").length; for(var i=0;i<n;i++) delete checks[ckey(i)]; saveChecks(); render();
+});
+window.addEventListener("resize",function(){ if(state.step==="cmp") buildCompare(); });
+render();
+})();
+</script>
+</body>
+</html>
