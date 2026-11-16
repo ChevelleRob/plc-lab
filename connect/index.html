@@ -224,6 +224,7 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .cmp thead.sr th{padding:0;height:0;line-height:0;font-size:0;border:0}
 .stickhead{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hdrH,0px));z-index:4;overflow:hidden;margin-top:12px;border:1.5px solid var(--line);border-bottom:1px solid var(--line);border-radius:10px 10px 0 0;background:var(--surface2)}
 .stickhead .cmp th{border-top:0;padding:10px}
+.stickhead.stuck{border-radius:0;box-shadow:0 -8px 0 var(--bg)}
 #cmpWrap .cmpwrap{margin-top:0;border-top:0;border-radius:0 0 10px 10px}
 body.wide .wrap{max-width:1040px}
 </style>
@@ -231,7 +232,7 @@ body.wide .wrap{max-width:1040px}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Connecting</span><span class="ver">v1.1</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Connecting</span><span class="ver">v1.2</span></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -493,6 +494,13 @@ function buildStickHead(){
   head.scrollLeft=box.scrollLeft;
 }
 document.getElementById("cmpBox").addEventListener("scroll",function(){ document.getElementById("stickHead").scrollLeft=this.scrollLeft; });
+/* Once the strip is stuck, square its corners and cover the sliver above it so the table can't show through */
+function markStuck(){
+  var h=document.getElementById("stickHead"); if(state.step!=="cmp") return;
+  var top=h.getBoundingClientRect().top, hdr=document.querySelector("header.top").getBoundingClientRect().bottom;
+  h.classList.toggle("stuck", top<=hdr+1);
+}
+window.addEventListener("scroll",markStuck,{passive:true});
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if(state.step==="cmp") buildStickHead(); });
 
 /* ---------- Render ---------- */

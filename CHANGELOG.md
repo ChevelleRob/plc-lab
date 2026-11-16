@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v2.7** Connecting card: v1.2
 - **v2.6** Connecting card: v1.1
 - **v2.5** Added the Connecting card
 - **v2.4** Analog I/O card: v1.3
@@ -77,5 +78,6 @@ Called "Timers & Addressing" through v1.7.
 
 ## Connecting (`connect/`)
 
+- **v1.2** Compare all: the frozen name row squares its corners and covers the sliver above it, so the table no longer shows through
 - **v1.1** Compare all: the row of PLC names stays at the top of the screen while you scroll down the table, and follows the table sideways
 - **v1.0** First version, for SLC 5/03 (1747-UIC to Channel 1, or RS-232 to Channel 0), CompactLogix 1769-L33ER (USB or Ethernet), S7-1200 1214C (Ethernet), CLICK Ethernet CPU (Ethernet or serial Port 1) and DL06 (serial Port 1). Five steps (connect, software, I/O setup, download, upload) with a cable diagram, where-to-click menu paths, a checklist remembered in the browser, and troubleshooting. Notes on less common connection methods. Compare table of all five, including download/upload vs write/read
