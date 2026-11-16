@@ -221,13 +221,17 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .cmp td{font-size:14px}
 .cmp td code{font-size:13px}
 .swipe{font-size:14px;margin-top:6px}
+.cmp thead.sr th{padding:0;height:0;line-height:0;font-size:0;border:0}
+.stickhead{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hdrH,0px));z-index:4;overflow:hidden;margin-top:12px;border:1.5px solid var(--line);border-bottom:1px solid var(--line);border-radius:10px 10px 0 0;background:var(--surface2)}
+.stickhead .cmp th{border-top:0;padding:10px}
+#cmpWrap .cmpwrap{margin-top:0;border-top:0;border-radius:0 0 10px 10px}
 body.wide .wrap{max-width:1040px}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Connecting</span><span class="ver">v1.0</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Connecting</span><span class="ver">v1.1</span></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -261,6 +265,7 @@ body.wide .wrap{max-width:1040px}
     <div class="trouble" id="trouble" hidden></div>
     <div id="cmpWrap" hidden>
       <p class="swipe muted" id="swipeHint">Swipe the table sideways to see all five PLCs →</p>
+      <div class="stickhead" id="stickHead" aria-hidden="true"></div>
       <div class="cmpwrap" id="cmpBox"></div>
     </div>
     <div class="note" id="noteBox"></div>
@@ -468,13 +473,27 @@ function progress(n){
 /* ---------- Compare table ---------- */
 var ROWS=[["Connection","conn"],["Cable","cable"],["Software","soft"],["Find the PLC","find"],["PC → PLC","to"],["PLC → PC","from"],["Run / program mode","mode"],["I/O setup","io"],["Comments and tag names","docs"],["Project file","file"]];
 function buildCompare(){
-  var h='<table class="cmp"><thead><tr><th class="rh" scope="col"> </th>'+PLATS.map(function(k){return '<th scope="col">'+P[k].name+'</th>'}).join("")+'</tr></thead><tbody>';
+  var h='<table class="cmp"><thead class="sr"><tr><th class="rh" scope="col"> </th>'+PLATS.map(function(k){return '<th scope="col">'+P[k].name+'</th>'}).join("")+'</tr></thead><tbody>';
   ROWS.forEach(function(r){
     h+='<tr'+(r[1]==="to"||r[1]==="from"?' class="key"':'')+'><th class="rh" scope="row">'+r[0]+'</th>'+PLATS.map(function(k){return '<td>'+esc(P[k].terms[r[1]])+'</td>'}).join("")+'</tr>';
   });
   document.getElementById("cmpBox").innerHTML=h+'</tbody></table>';
   var b=document.getElementById("cmpBox"); document.getElementById("swipeHint").hidden = b.scrollWidth<=b.clientWidth+2;
+  buildStickHead();
 }
+/* The PLC-name row is drawn again in its own strip that sticks under the page header.
+   It copies the table's column widths and follows the table when it scrolls sideways. */
+function buildStickHead(){
+  var box=document.getElementById("cmpBox"), head=document.getElementById("stickHead"), tbl=box.querySelector("table");
+  if(!tbl) return;
+  document.documentElement.style.setProperty("--hdrH", document.querySelector("header.top").offsetHeight+"px");
+  var cells=[].slice.call(tbl.querySelector("tbody tr").children), widths=cells.map(function(c){return c.getBoundingClientRect().width});
+  head.innerHTML='<table class="cmp" style="width:'+tbl.getBoundingClientRect().width+'px;table-layout:fixed"><thead><tr>'+
+    widths.map(function(w,i){ return '<th'+(i===0?' class="rh"':'')+' style="width:'+w+'px;min-width:'+w+'px;max-width:'+w+'px">'+(i===0?"\u00A0":P[PLATS[i-1]].name)+'</th>' }).join("")+'</tr></thead></table>';
+  head.scrollLeft=box.scrollLeft;
+}
+document.getElementById("cmpBox").addEventListener("scroll",function(){ document.getElementById("stickHead").scrollLeft=this.scrollLeft; });
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if(state.step==="cmp") buildStickHead(); });
 
 /* ---------- Render ---------- */
 function render(){
