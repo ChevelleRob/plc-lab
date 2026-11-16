@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v2.8** Addressing card: v1.2
 - **v2.7** Connecting card: v1.2
 - **v2.6** Connecting card: v1.1
 - **v2.5** Added the Connecting card
@@ -26,6 +27,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Addressing (`addressing/`)
 
+- **v1.2** Compare: the row of PLC names stays at the top of the screen while you scroll down the table, follows the table sideways, and squares its corners when stuck so the table can’t show through
 - **v1.1** Added CLICK and DirectLOGIC DL06 (breakdowns, quick reference, quiz). New Compare view: a table of the same addresses across all five PLCs, with the left column fixed and the rest scrolling sideways. Platform buttons now sit in a 3 × 2 grid
 - **v1.0** Split out of Timers & Addressing v1.7 as its own tool. Same content: address breakdowns, quick reference and quiz for SLC 500, CompactLogix and S7
 

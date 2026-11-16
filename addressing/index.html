@@ -102,6 +102,11 @@ p{margin:6px 0}
 .cmp tr.grp + tr th,.cmp tr.grp + tr td{border-top:0}
 .cmp tr.key td{background:var(--c2bg)}
 .swipe{font-size:14px;margin-top:6px}
+.cmp thead.sr th{padding:0;height:0;line-height:0;font-size:0;border:0}
+.stickhead{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hdrH,0px));z-index:4;overflow:hidden;margin-top:12px;border:1.5px solid var(--line);border-bottom:1px solid var(--line);border-radius:10px 10px 0 0;background:var(--surface2)}
+.stickhead .cmp th{border-top:0}
+.stickhead.stuck{border-radius:0;box-shadow:0 -8px 0 var(--bg)}
+#view-compare .cmpwrap{margin-top:0;border-top:0;border-radius:0 0 10px 10px}
 .cmp td b{display:block;font-weight:700}
 body.wide .wrap{max-width:1040px}
 
@@ -124,7 +129,7 @@ body.wide .wrap{max-width:1040px}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.1</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.2</span></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -158,6 +163,7 @@ body.wide .wrap{max-width:1040px}
     <h2>Compare all five</h2>
     <p class="muted">The same jobs, written five ways. SLC 500 and CompactLogix examples assume an input card in slot 1 and an output card in slot 2. The highlighted row is the one that trips people up.</p>
     <p class="swipe muted" id="swipeHint" hidden>Swipe the table sideways to see all five PLCs →</p>
+    <div class="stickhead" id="stickHead" aria-hidden="true"></div>
     <div class="cmpwrap" id="cmpBox"></div>
   </section>
 </main>
@@ -365,16 +371,37 @@ var CMP=[
   ["Floating point",[["F8:0","SLC 5/03 and up"],["REAL tag","",1],["%MD0","As a Real"],["DF1",""],["V2000 + V2001","Two words, real format"]]]
 ];
 function buildCompare(){
-  var h='<table class="cmp"><thead><tr><th class="rh" scope="col">Address for\u2026</th>'+CMP_COLS.map(function(c){return '<th scope="col">'+c+'</th>'}).join("")+'</tr></thead><tbody>';
+  var h='<table class="cmp"><thead class="sr"><tr><th class="rh" scope="col">Address for\u2026</th>'+CMP_COLS.map(function(c){return '<th scope="col">'+c+'</th>'}).join("")+'</tr></thead><tbody>';
   CMP.forEach(function(r){
     if(typeof r==="string"){ h+='<tr class="grp"><th class="rh" scope="rowgroup">'+r+'</th>'+CMP_COLS.map(function(){return '<td></td>'}).join("")+'</tr>'; return; }
     h+='<tr'+(r[2]?' class="'+r[2]+'"':'')+'><th class="rh" scope="row">'+r[0]+'</th>'+r[1].map(function(c){return '<td>'+(r[2]==="plain"||c[2]?'<b>'+esc(c[0])+'</b>':'<code>'+esc(c[0])+'</code>')+(c[1]?'<small>'+c[1]+'</small>':'')+'</td>'}).join("")+'</tr>';
   });
   document.getElementById("cmpBox").innerHTML=h+'</tbody></table>';
-  swipeHint();
+  swipeHint(); buildStickHead();
 }
 function swipeHint(){var b=document.getElementById("cmpBox"); document.getElementById("swipeHint").hidden = b.scrollWidth<=b.clientWidth+2;}
-window.addEventListener("resize",function(){ if(state.plat==="cmp") swipeHint(); });
+window.addEventListener("resize",function(){ if(state.plat==="cmp"){ swipeHint(); buildStickHead(); } });
+/* The PLC-name row is drawn again in its own strip that sticks under the page header.
+   It copies the table's column widths and follows the table when it scrolls sideways. */
+function buildStickHead(){
+  var box=document.getElementById("cmpBox"), head=document.getElementById("stickHead"), tbl=box.querySelector("table");
+  if(!tbl) return;
+  document.documentElement.style.setProperty("--hdrH", document.querySelector("header.top").offsetHeight+"px");
+  var row=tbl.querySelector("tbody tr:not(.grp)"), widths=[].slice.call(row.children).map(function(c){return c.getBoundingClientRect().width});
+  var names=["Address for\u2026"].concat(CMP_COLS);
+  head.innerHTML='<table class="cmp" style="width:'+tbl.getBoundingClientRect().width+'px;table-layout:fixed;min-width:0"><thead><tr>'+
+    widths.map(function(w,i){ return '<th'+(i===0?' class="rh"':'')+' style="width:'+w+'px;min-width:'+w+'px;max-width:'+w+'px">'+names[i]+'</th>' }).join("")+'</tr></thead></table>';
+  head.scrollLeft=box.scrollLeft; markStuck();
+}
+document.getElementById("cmpBox").addEventListener("scroll",function(){ document.getElementById("stickHead").scrollLeft=this.scrollLeft; });
+/* Once the strip is stuck, square its corners and cover the sliver above it so the table can't show through */
+function markStuck(){
+  if(state.plat!=="cmp") return;
+  var h=document.getElementById("stickHead"), top=h.getBoundingClientRect().top, hdr=document.querySelector("header.top").getBoundingClientRect().bottom;
+  h.classList.toggle("stuck", top<=hdr+1);
+}
+window.addEventListener("scroll",markStuck,{passive:true});
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if(state.plat==="cmp") buildStickHead(); });
 
 /* ---------- Platform switching ---------- */
 function setPlat(p){
