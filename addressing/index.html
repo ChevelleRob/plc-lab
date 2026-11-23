@@ -102,6 +102,7 @@ p{margin:6px 0}
 .cmp tr.grp td{background:var(--bg);border-left:0}
 .cmp tr.grp + tr th,.cmp tr.grp + tr td{border-top:0}
 .cmp tr.key td{background:var(--c2bg)}
+.cmp td.hl{background:var(--c2bg);box-shadow:inset 3px 0 0 var(--c2)}
 .swipe{font-size:14px;margin-top:6px}
 .cmp thead.sr th{padding:0;height:0;line-height:0;font-size:0;border:0}
 .stickhead{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hdrH,0px));z-index:4;overflow:hidden;margin-top:12px;border:1.5px solid var(--line);border-bottom:1px solid var(--line);border-radius:10px 10px 0 0;background:var(--surface2)}
@@ -137,7 +138,7 @@ body.wide .wrap{max-width:1040px}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.4</span><button class="themebtn" id="themeBtn" type="button"></button></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.5</span><button class="themebtn" id="themeBtn" type="button"></button></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -169,7 +170,7 @@ body.wide .wrap{max-width:1040px}
 
   <section id="view-compare" hidden>
     <h2>Compare all five</h2>
-    <p class="muted">The same jobs, written five ways. SLC 500 and CompactLogix examples assume an input card in slot 1 and an output card in slot 2. Inputs 6, 7 and 8 are counted from 0, so Input 6 is the seventh input. CLICK numbers its points from 1, so its seventh input is X007.</p>
+    <p class="muted">The same jobs, written five ways. SLC 500 and CompactLogix examples assume an input card in slot 1 and an output card in slot 2. Most PLCs number their inputs from 0, so the 1st input is point 0. CLICK starts at 1. The highlighted boxes are the ones that trip people up.</p>
     <p class="swipe muted" id="swipeHint" hidden>Swipe the table sideways to see all five PLCs →</p>
     <div class="stickhead" id="stickHead" aria-hidden="true"></div>
     <div class="cmpwrap" id="cmpBox"></div>
@@ -356,9 +357,11 @@ var CMP_COLS=["SLC 500","CompactLogix","Siemens S7","CLICK","DL06"];
 var CMP=[
   "Numbering",
   ["Number base",[["Decimal","Bits 0\u201315 in each word"],["Decimal","Bits 0\u201331 in a DINT"],["Byte.bit","Bits 0\u20137, then the next byte"],["Decimal","Points 01\u201316 on each module"],["Octal","0\u20137, then 10. No 8 or 9"]],"plain"],
-  ["Input 6",[["I:1/6",""],["Local:1:I.Data.6",""],["%I0.6",""],["X007","Starts at 001"],["X6",""]]],
-  ["Input 7",[["I:1/7",""],["Local:1:I.Data.7",""],["%I0.7","Last bit of byte 0"],["X008",""],["X7","Last octal digit"]]],
-  ["Input 8",[["I:1/8",""],["Local:1:I.Data.8",""],["%I1.0","New byte"],["X009",""],["X10","Octal: no 8 or 9"]]],
+  /* A 4th cell value of 1 highlights an address that often trips students up */
+  ["1st input",[["I:1/0",""],["Local:1:I.Data.0",""],["%I0.0",""],["X001","Starts at 001, not 000",0,1],["X0",""]]],
+  ["7th input",[["I:1/6",""],["Local:1:I.Data.6",""],["%I0.6",""],["X007",""],["X6",""]]],
+  ["8th input",[["I:1/7",""],["Local:1:I.Data.7",""],["%I0.7","Last bit of byte 0"],["X008",""],["X7","Last octal digit"]]],
+  ["9th input",[["I:1/8",""],["Local:1:I.Data.8",""],["%I1.0","Next byte, bit 0",0,1],["X009",""],["X10","Octal: no 8 or 9",0,1]]],
   "Inputs and outputs",
   ["First input",[["I:1/0","Card in slot 1"],["Local:1:I.Data.0","Module in slot 1"],["%I0.0","On the CPU"],["X001","On the CPU"],["X0","On the CPU"]]],
   ["First output",[["O:2/0","Card in slot 2"],["Local:2:O.Data.0","Module in slot 2"],["%Q0.0","On the CPU"],["Y001","On the CPU"],["Y0","On the CPU"]]],
@@ -384,7 +387,7 @@ function buildCompare(){
   var h='<table class="cmp"><thead class="sr"><tr><th class="rh" scope="col">Address for\u2026</th>'+CMP_COLS.map(function(c){return '<th scope="col">'+c+'</th>'}).join("")+'</tr></thead><tbody>';
   CMP.forEach(function(r){
     if(typeof r==="string"){ h+='<tr class="grp"><th class="rh" scope="rowgroup">'+r+'</th>'+CMP_COLS.map(function(){return '<td></td>'}).join("")+'</tr>'; return; }
-    h+='<tr'+(r[2]?' class="'+r[2]+'"':'')+'><th class="rh" scope="row">'+r[0]+'</th>'+r[1].map(function(c){return '<td>'+(r[2]==="plain"||c[2]?'<b>'+esc(c[0])+'</b>':'<code>'+esc(c[0])+'</code>')+(c[1]?'<small>'+c[1]+'</small>':'')+'</td>'}).join("")+'</tr>';
+    h+='<tr'+(r[2]?' class="'+r[2]+'"':'')+'><th class="rh" scope="row">'+r[0]+'</th>'+r[1].map(function(c){return '<td'+(c[3]?' class="hl"':'')+'>'+(r[2]==="plain"||c[2]?'<b>'+esc(c[0])+'</b>':'<code>'+esc(c[0])+'</code>')+(c[1]?'<small>'+c[1]+'</small>':'')+'</td>'}).join("")+'</tr>';
   });
   document.getElementById("cmpBox").innerHTML=h+'</tbody></table>';
   swipeHint(); buildStickHead();
