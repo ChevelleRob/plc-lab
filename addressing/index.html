@@ -102,6 +102,7 @@ p{margin:6px 0}
 .cmp tr.grp td{background:var(--bg);border-left:0}
 .cmp tr.grp + tr th,.cmp tr.grp + tr td{border-top:0}
 .cmp tr.key td{background:var(--c2bg)}
+.cmp .rh small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
 .cmp td.hl{background:var(--c2bg);box-shadow:inset 3px 0 0 var(--c2)}
 .swipe{font-size:14px;margin-top:6px}
 .cmp thead.sr th{padding:0;height:0;line-height:0;font-size:0;border:0}
@@ -138,7 +139,7 @@ body.wide .wrap{max-width:1040px}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.5</span><button class="themebtn" id="themeBtn" type="button"></button></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.6</span><button class="themebtn" id="themeBtn" type="button"></button></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -368,7 +369,7 @@ var CMP=[
   ["First input on an add-on module",[["I:3/0","Card in slot 3"],["Local:3:I.Data.0","Module in slot 3"],["%I8.0","Default for the first signal module. Set in Device configuration"],["X101","Module in slot 1"],["X100","Option card in slot 1"]]],
   ["All 16 inputs as one word",[["I:1.0","Word 0 of slot 1"],["Local:1:I.Data","The whole DINT"],["%IW0","Bytes 0 and 1"],["XD0","CPU inputs"],["V40400","X0\u2013X17"]]],
   "Internal memory",
-  ["Internal bit",[["B3:0/0",""],["Run_Flag","Any BOOL tag"],["%M0.0",""],["C1",""],["C0",""]]],
+  ["Internal bit<small>a “virtual output”</small>",[["B3:0/0",""],["Run_Flag","Any BOOL tag"],["%M0.0",""],["C1",""],["C0",""]]],
   ["First-scan bit",[["S:1/15",""],["S:FS",""],["%M1.0","If the system memory byte is set to MB1"],["SC2",""],["SP0",""]]],
   "Timers",
   ["Done bit",[["T4:0/DN",""],["Timer1.DN",""],["\u201CIEC_Timer_0_DB\u201D.Q",""],["T1",""],["T0",""]]],
