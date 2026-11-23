@@ -21,6 +21,11 @@ The README is for students and visitors; maintenance rules live here.
    Show the tool's version (`v1.0`) in the header, and make the "PLC Lab" title
    a link back to the home page (`<h1><a href="../">PLC Lab</a></h1>`, styled
    like `timers/index.html`).
+   Copy the theme button too: the early `pl-theme` script right after the
+   viewport meta, the `.themebtn` CSS (and its narrow-screen rules), the
+   `<button class="themebtn" id="themeBtn">` after the version, and the theme
+   script before `</body>`. The choice is shared by every page through
+   `localStorage` key `pl-theme`.
 3. Add a card for it in the `<ul class="tools">` list on the home page
    (`index.html`), with the same version number, and bump the home page version.
 4. Add a row to the Tools table in `README.md`.

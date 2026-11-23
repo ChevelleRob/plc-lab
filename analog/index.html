@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>/* Theme chosen with the header button (Auto / Light / Dark), shared by every PLC Lab page */try{var t=localStorage.getItem("pl-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <title>PLC Lab: analog I/O, scaling and HART</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -219,12 +220,18 @@ body.has-bar .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 #ctlBar .rng{accent-color:var(--live);margin:6px 0 2px;height:28px}
 body.has-bar .wrap{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 @media (prefers-reduced-motion: reduce){.ladder .flow{animation:none;stroke-dasharray:none}.ladder .imp{animation:none!important}}
+
+/* Theme button in the header: Auto / Light / Dark */
+.themebtn{display:inline-flex;align-items:center;gap:5px;margin-left:10px;align-self:center;background:transparent;border:1.5px solid rgba(255,255,255,.28);color:var(--onpanel);border-radius:6px;padding:3px 8px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;line-height:1.2}
+.themebtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+@media (max-width:360px){ .themebtn span{display:none} .themebtn{padding:4px 6px;margin-left:8px} .brand{gap:8px} }
+@media (max-width:340px){ .brand{flex-wrap:nowrap} .brand h1{white-space:nowrap;flex:none} .brand > span:not(.ver){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} }
 </style>
 </head>
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.3</span></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Analog I/O</span><span class="ver">v1.4</span><button class="themebtn" id="themeBtn" type="button"></button></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -687,6 +694,25 @@ document.getElementById("ioRange").addEventListener("input",function(){
 document.getElementById("brkBtn").addEventListener("click",function(){ state.broken=!state.broken; renderIO(); });
 document.getElementById("hartBtn").addEventListener("click",function(){ state.hart=!state.hart; buildHart(); });
 render();
+})();
+</script>
+<script>
+/* Theme button: cycles Auto (follow the device), Light and Dark; the choice is shared by every PLC Lab page */
+(function(){
+  var b=document.getElementById("themeBtn"); if(!b) return;
+  var ICON={auto:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16" /><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg>',
+    light:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    dark:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>'};
+  var NAME={auto:"Auto",light:"Light",dark:"Dark"}, NEXT={auto:"light",light:"dark",dark:"auto"};
+  function get(){ try{ var t=localStorage.getItem("pl-theme"); return t==="light"||t==="dark"?t:"auto" }catch(e){ return "auto" } }
+  function apply(t){
+    if(t==="auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme",t);
+    b.innerHTML=ICON[t]+"<span>"+NAME[t]+"</span>";
+    b.setAttribute("aria-label","Color theme: "+NAME[t]+". Change to "+NAME[NEXT[t]]);
+    b.title="Color theme: "+NAME[t]+(t==="auto"?" (follows this device)":"");
+  }
+  b.addEventListener("click",function(){ var t=NEXT[get()]; try{ if(t==="auto") localStorage.removeItem("pl-theme"); else localStorage.setItem("pl-theme",t) }catch(e){} apply(t); });
+  apply(get());
 })();
 </script>
 </body>
