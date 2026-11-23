@@ -5,6 +5,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Home page (`index.html`)
 
+- **v3.0** Addressing card: v1.4
 - **v2.9** Theme button in the header (Auto, Light, Dark), shared with every tool; all cards updated to the new tool versions
 - **v2.8** Addressing card: v1.2
 - **v2.7** Connecting card: v1.2
@@ -28,6 +29,7 @@ Each tool has its own version number, shown in its header bar.
 
 ## Addressing (`addressing/`)
 
+- **v1.4** Compare: "Counting" group renamed "Numbering"; the highlighted "input after point 7" row replaced by plain Input 6, Input 7 and Input 8 rows, with a note that CLICK counts from 1
 - **v1.3** Theme button in the header: Auto (follows the device), Light or Dark, remembered across all PLC Lab pages
 - **v1.2** Compare: the row of PLC names stays at the top of the screen while you scroll down the table, follows the table sideways, and squares its corners when stuck so the table can’t show through
 - **v1.1** Added CLICK and DirectLOGIC DL06 (breakdowns, quick reference, quiz). New Compare view: a table of the same addresses across all five PLCs, with the left column fixed and the rest scrolling sideways. Platform buttons now sit in a 3 × 2 grid

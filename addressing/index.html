@@ -137,7 +137,7 @@ body.wide .wrap{max-width:1040px}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.3</span><button class="themebtn" id="themeBtn" type="button"></button></div>
+    <div class="brand"><h1><a href="../" title="Back to PLC Lab home">PLC Lab</a></h1><span>Addressing practice</span><span class="ver">v1.4</span><button class="themebtn" id="themeBtn" type="button"></button></div>
     <div class="plats" role="group" aria-label="PLC platform">
       <button data-plat="slc">SLC 500</button>
       <button data-plat="clx">CompactLogix</button>
@@ -169,7 +169,7 @@ body.wide .wrap{max-width:1040px}
 
   <section id="view-compare" hidden>
     <h2>Compare all five</h2>
-    <p class="muted">The same jobs, written five ways. SLC 500 and CompactLogix examples assume an input card in slot 1 and an output card in slot 2. The highlighted row is the one that trips people up.</p>
+    <p class="muted">The same jobs, written five ways. SLC 500 and CompactLogix examples assume an input card in slot 1 and an output card in slot 2. Inputs 6, 7 and 8 are counted from 0, so Input 6 is the seventh input. CLICK numbers its points from 1, so its seventh input is X007.</p>
     <p class="swipe muted" id="swipeHint" hidden>Swipe the table sideways to see all five PLCs →</p>
     <div class="stickhead" id="stickHead" aria-hidden="true"></div>
     <div class="cmpwrap" id="cmpBox"></div>
@@ -354,9 +354,11 @@ function renderQuiz(){
 var CMP_COLS=["SLC 500","CompactLogix","Siemens S7","CLICK","DL06"];
 /* Each cell: [address, note]. A group row is just a string. */
 var CMP=[
-  "Counting",
+  "Numbering",
   ["Number base",[["Decimal","Bits 0\u201315 in each word"],["Decimal","Bits 0\u201331 in a DINT"],["Byte.bit","Bits 0\u20137, then the next byte"],["Decimal","Points 01\u201316 on each module"],["Octal","0\u20137, then 10. No 8 or 9"]],"plain"],
-  ["The input after point 7",[["I:1/8",""],["Local:1:I.Data.8",""],["%I1.0","New byte"],["X008",""],["X10","Octal"]],"key"],
+  ["Input 6",[["I:1/6",""],["Local:1:I.Data.6",""],["%I0.6",""],["X007","Starts at 001"],["X6",""]]],
+  ["Input 7",[["I:1/7",""],["Local:1:I.Data.7",""],["%I0.7","Last bit of byte 0"],["X008",""],["X7","Last octal digit"]]],
+  ["Input 8",[["I:1/8",""],["Local:1:I.Data.8",""],["%I1.0","New byte"],["X009",""],["X10","Octal: no 8 or 9"]]],
   "Inputs and outputs",
   ["First input",[["I:1/0","Card in slot 1"],["Local:1:I.Data.0","Module in slot 1"],["%I0.0","On the CPU"],["X001","On the CPU"],["X0","On the CPU"]]],
   ["First output",[["O:2/0","Card in slot 2"],["Local:2:O.Data.0","Module in slot 2"],["%Q0.0","On the CPU"],["Y001","On the CPU"],["Y0","On the CPU"]]],
