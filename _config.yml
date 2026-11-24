@@ -3,3 +3,4 @@
 exclude:
   - TO-VERIFY.md
   - CLAUDE.md
+  - assets/src

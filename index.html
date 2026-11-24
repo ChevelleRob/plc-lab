@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Theme chosen with the header button (Auto / Light / Dark), shared by every PLC Lab page */try{var t=localStorage.getItem("pl-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <title>PLC Lab</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PLC Lab">
+<meta property="og:title" content="PLC Lab">
+<meta property="og:description" content="Practice tools for PLC students: Allen-Bradley SLC 500, CompactLogix and Siemens S7.">
+<meta property="og:image" content="https://chevellerob.github.io/plc-lab/assets/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta property="og:image:alt" content="PLC Lab: practice tools, with an example diagram">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="Practice tools for PLC students: Allen-Bradley SLC 500, CompactLogix and Siemens S7.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,7 +87,7 @@ footer a{color:var(--c1)}
 <body>
 <header class="top">
   <div class="inner">
-    <div class="brand"><h1>PLC Lab</h1><span>Practice tools for PLC students</span><span class="ver">v3.0</span><button class="themebtn" id="themeBtn" type="button"></button></div>
+    <div class="brand"><h1>PLC Lab</h1><span>Practice tools for PLC students</span><span class="ver">v3.1</span><button class="themebtn" id="themeBtn" type="button"></button></div>
   </div>
 </header>
 
@@ -92,7 +104,7 @@ footer a{color:var(--c1)}
           <small>Take addresses apart piece by piece, compare all five PLCs side by side, then quiz yourself.</small>
           <span class="plats"><span>SLC 500</span><span>CompactLogix</span><span>Siemens S7</span><span>CLICK</span><span>DL06</span></span>
         </span>
-        <span class="tv">v1.6</span>
+        <span class="tv">v1.7</span>
         <span class="go" aria-hidden="true">›</span>
       </a>
     </li>
@@ -104,7 +116,7 @@ footer a{color:var(--c1)}
           <small>Run on-delay, off-delay and retentive timers on a live rung and watch the timing diagram.</small>
           <span class="plats"><span>SLC 500</span><span>CompactLogix</span><span>Siemens S7</span><span>CLICK</span><span>DL06</span></span>
         </span>
-        <span class="tv">v2.2</span>
+        <span class="tv">v2.3</span>
         <span class="go" aria-hidden="true">›</span>
       </a>
     </li>
@@ -116,7 +128,7 @@ footer a{color:var(--c1)}
           <small>Tap pushbuttons to count up, down, reset and load, and watch the count and done bit live.</small>
           <span class="plats"><span>SLC 500</span><span>CompactLogix</span><span>Siemens S7</span><span>CLICK</span><span>DL06</span></span>
         </span>
-        <span class="tv">v1.1</span>
+        <span class="tv">v1.2</span>
         <span class="go" aria-hidden="true">›</span>
       </a>
     </li>
@@ -128,7 +140,7 @@ footer a{color:var(--c1)}
           <small>NOT, AND, OR, NAND and NOR as ladder rungs, gate symbols and truth tables, plus memory: seal-in, latch/unlatch and relay seal-in.</small>
           <span class="plats"><span>Generic tags</span><span>Any PLC</span></span>
         </span>
-        <span class="tv">v1.5</span>
+        <span class="tv">v1.6</span>
         <span class="go" aria-hidden="true">›</span>
       </a>
     </li>
@@ -140,7 +152,7 @@ footer a{color:var(--c1)}
           <small>Greater than, less than, equal and in-range: compare an up/down count with 3, 5 or 8, or a range, on a live rung and a number line.</small>
           <span class="plats"><span>SLC 500</span><span>CompactLogix</span><span>Siemens S7</span><span>CLICK</span><span>DL06</span></span>
         </span>
-        <span class="tv">v1.2</span>
+        <span class="tv">v1.3</span>
         <span class="go" aria-hidden="true">›</span>
       </a>
     </li>
@@ -152,7 +164,7 @@ footer a{color:var(--c1)}
           <small>Wire switches, PNP/NPN sensors and lamps to I/O modules, watch the current flow, see what wrong wiring does, and learn to set sensor sensitivity.</small>
           <span class="plats"><span>DC in &amp; out</span><span>AC in</span><span>Triac</span><span>Relay</span><span>Sensors</span></span>
         </span>
-        <span class="tv">v1.4</span>
+        <span class="tv">v1.5</span>
         <span class="go" aria-hidden="true">›</span>
       </a>
     </li>
@@ -164,7 +176,7 @@ footer a{color:var(--c1)}
           <small>0–10 V and 4–20 mA: wiring, raw counts, scaling to inches and hertz, broken-wire detection, and HART.</small>
           <span class="plats"><span>SLC 500</span><span>CompactLogix</span><span>Siemens S7</span><span>CLICK</span><span>DL06</span></span>
         </span>
-        <span class="tv">v1.4</span>
+        <span class="tv">v1.5</span>
         <span class="go" aria-hidden="true">›</span>
       </a>
     </li>
@@ -176,7 +188,7 @@ footer a{color:var(--c1)}
           <small>Cables, software, I/O setup, and sending and getting programs: step-by-step checklists for each PLC, and the words each one uses.</small>
           <span class="plats"><span>SLC 500</span><span>CompactLogix</span><span>Siemens S7</span><span>CLICK</span><span>DL06</span></span>
         </span>
-        <span class="tv">v1.3</span>
+        <span class="tv">v1.4</span>
         <span class="go" aria-hidden="true">›</span>
       </a>
     </li>

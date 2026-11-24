@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0}
+body{width:1280px;height:640px;overflow:hidden;font-family:Barlow,sans-serif;color:#EEF1F2;
+ background:radial-gradient(circle at 1px 1px,rgba(255,255,255,.07) 1.6px,transparent 2px) 0 0/32px 32px,linear-gradient(135deg,#25313A,#141B21)}
+.wrap{position:relative;height:640px;display:flex;align-items:center;gap:40px;padding:0 70px 0 84px;box-sizing:border-box}
+.txt{flex:1;min-width:0}
+.kick{display:flex;align-items:center;gap:14px;font-size:24px;font-weight:700;letter-spacing:.16em;color:#9AA7B1}
+.kick i{width:22px;height:22px;border-radius:50%;background:#3BD681;box-shadow:0 0 18px #3BD681}
+h1{margin:18px 0 8px;font-size:104px;line-height:.95;font-weight:800;letter-spacing:-.01em}
+.sub{font-size:34px;font-weight:500;color:#C3CCD2}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:36px}
+.chips span{font-size:22px;font-weight:600;color:#8DB8F0;background:#1D3150;border-radius:6px;padding:3px 11px}
+.card{flex:none;background:#1D252C;border:2px solid #34414B;border-radius:22px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.bar{position:absolute;left:0;right:0;bottom:0;height:10px;background:#3BD681}
+svg text{font-family:Barlow,sans-serif}
+</style></head><body><div class="wrap">
+<div class="txt"><div class="kick"><i></i>PRACTICE TOOLS</div><h1 id="t"></h1><div class="sub" id="s"></div><div class="chips" id="c"></div></div>
+<div class="card" id="art"></div>
+</div><div class="bar"></div>
+<script>
+var which=location.hash.slice(1)||"el";
+var dash='stroke-dasharray="3 17" stroke-linecap="round" fill="none"';
+function flow(d){return '<path d="'+d+'" stroke="#1D252C" stroke-width="8" '+dash+'/><path d="'+d+'" stroke="#6CB4FF" stroke-width="4.5" '+dash+'/>'}
+var EL='<svg width="460" height="380" viewBox="22 -14 392 324">'+
+ '<defs><radialGradient id="g"><stop offset="0" stop-color="#FFF3C4"/><stop offset=".35" stop-color="#FFC857" stop-opacity=".8"/><stop offset="1" stop-color="#FFB020" stop-opacity="0"/></radialGradient></defs>'+
+ '<circle cx="300" cy="112" r="92" fill="url(#g)"/>'+
+ '<path d="M70 60 V22 H170 M230 22 H350 V165 H314" stroke="#D9493B" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>'+
+ '<path d="M70 202 V250 H300 V182" stroke="#0A0E11" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>'+
+ '<path d="M70 202 V250 H300 V182" stroke="#5D6A74" stroke-width="1.2" fill="none" stroke-linejoin="round" opacity=".6"/>'+
+ '<rect x="62" y="58" width="16" height="12" rx="2" fill="#9AA3A9"/><rect x="40" y="68" width="60" height="134" rx="8" fill="#2E3A44" stroke="#5D6A74" stroke-width="1.5"/>'+
+ '<path d="M48 68 H92 A8 8 0 0 1 100 76 V102 H40 V76 A8 8 0 0 1 48 68Z" fill="#D69A35"/>'+
+ '<text x="70" y="94" text-anchor="middle" style="font-size:24px;font-weight:800;fill:#1D1400">+</text>'+
+ '<text x="70" y="148" text-anchor="middle" style="font-family:JetBrains Mono;font-size:18px;font-weight:700;fill:#EEF1F2">6 V</text><text x="70" y="190" text-anchor="middle" style="font-size:28px;font-weight:700;fill:#EEF1F2">−</text>'+
+ '<rect x="158" y="27" width="84" height="9" rx="2" fill="#2A353E" stroke="#4A5862"/><line x1="170" y1="22" x2="230" y2="22" stroke="#B7BFC5" stroke-width="6" stroke-linecap="round"/><circle cx="170" cy="22" r="5.5" fill="#C9CED2"/><circle cx="230" cy="22" r="5" fill="#C9CED2"/>'+
+ '<circle cx="300" cy="112" r="34" fill="rgba(255,250,230,.18)" stroke="#E5EAED" stroke-width="2"/>'+
+ '<path d="M292 150 L288 112 M308 150 L312 112" stroke="#C9CED2" stroke-width="1.8"/>'+
+ '<path d="M288 112 l3 -5 l3 5 l3 -5 l3 5 l3 -5 l3 5 l3 -5 l3 5" fill="none" stroke="#FFFBEA" stroke-width="2.6" stroke-linejoin="round"/>'+
+ '<rect x="286" y="146" width="28" height="30" rx="3" fill="#9AA3A9" stroke="#5D6A74"/><path d="M286 153 H314 M286 160 H314 M286 167 H314" stroke="#5D6A74"/><rect x="294" y="175" width="12" height="7" rx="2" fill="#3A4046"/>'+
+ flow("M70 202 V250 H300 V182")+flow("M314 165 H350 V22 H230")+flow("M230 22 H170")+flow("M170 22 H70 V60")+
+ '</svg>';
+function contact(x,y,on,lab,nc){return '<text x="'+(x+12)+'" y="'+(y-26)+'" text-anchor="middle" style="font-size:17px;font-weight:600;fill:#9AA7B1">'+lab+'</text>'+(on?'<rect x="'+(x+3)+'" y="'+(y-15)+'" width="18" height="30" fill="#3BD681"/>':'')+'<path d="M'+x+' '+(y-18)+' V'+(y+18)+' M'+(x+24)+' '+(y-18)+' V'+(y+18)+'" stroke="#E5EAED" stroke-width="3.5"/>'+(nc?'<path d="M'+(x-4)+' '+(y+18)+' L'+(x+28)+' '+(y-18)+'" stroke="#E5EAED" stroke-width="3"/>':'')}
+function w(d,on){return '<path d="'+d+'" stroke="'+(on?"#3BD681":"#5D6A74")+'" stroke-width="'+(on?5:3.5)+'" fill="none" '+(on?'style="filter:drop-shadow(0 0 4px rgba(59,214,129,.6))"':'')+'/>'}
+var PLC='<svg width="440" height="380" viewBox="0 0 440 380">'+
+ '<line x1="20" y1="20" x2="20" y2="360" stroke="#3BD681" stroke-width="6"/><line x1="420" y1="20" x2="420" y2="360" stroke="#3BD681" stroke-width="6"/>'+
+ w("M20 100 H70",1)+contact(70,100,1,"Start")+w("M94 100 H170",1)+contact(170,100,1,"Stop",0)+w("M194 100 H320",1)+
+ w("M44 100 V190 H70",1)+contact(70,190,1,"Motor")+w("M94 190 H120 V100",1)+
+ '<path d="M332 82 Q318 100 332 118 M354 82 Q368 100 354 118" stroke="#3BD681" stroke-width="4" fill="rgba(59,214,129,.25)" style="filter:drop-shadow(0 0 6px #3BD681)"/>'+
+ '<text x="343" y="60" text-anchor="middle" style="font-size:17px;font-weight:600;fill:#9AA7B1">Motor</text>'+w("M366 100 H420",1)+
+ w("M20 290 H70",1)+contact(70,290,1,"Motor")+w("M94 290 H170",1)+
+ '<rect x="170" y="252" width="150" height="80" rx="4" fill="#242E36" stroke="#E5EAED" stroke-width="2.5"/>'+
+ '<text x="184" y="280" style="font-size:22px;font-weight:800;fill:#E5EAED">TON</text><text x="184" y="306" style="font-size:16px;fill:#9AA7B1">Preset</text><text x="306" y="306" text-anchor="end" style="font-family:JetBrains Mono;font-size:15px;font-weight:700;fill:#E5EAED">5000</text>'+
+ '<text x="184" y="324" style="font-size:16px;fill:#9AA7B1">Accum</text><text x="306" y="324" text-anchor="end" style="font-family:JetBrains Mono;font-size:15px;font-weight:700;fill:#F0B33A">3120</text>'+
+ w("M320 290 H350",1)+'<circle cx="366" cy="290" r="16" fill="#3BD681"/><text x="366" y="296" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#0F1418">EN</text>'+w("M382 290 H420",1)+
+ '</svg>';
+var D={el:{t:"Electronics Lab",s:"Practice tools for electronics students",c:["Interactive","Electron flow","Works on phones"],a:EL},
+ plc:{t:"PLC Lab",s:"Practice tools for PLC students",c:["SLC 500","CompactLogix","Siemens S7","CLICK","DL06"],a:PLC}}[which];
+document.getElementById("t").textContent=D.t; document.getElementById("s").textContent=D.s;
+document.getElementById("c").innerHTML=D.c.map(function(x){return "<span>"+x+"</span>"}).join("");
+document.getElementById("art").innerHTML=D.a;
+</script></body></html>

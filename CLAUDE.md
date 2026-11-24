@@ -25,8 +25,15 @@ The README is for students and visitors; maintenance rules live here.
    viewport meta, the `.themebtn` CSS (and its narrow-screen rules), the
    `<button class="themebtn" id="themeBtn">` after the version, and the theme
    script before `</body>`. The choice is shared by every page through
-   `localStorage` key `pl-theme`.
+   `localStorage` key `pl-theme`. Copy the icon and link-preview tags too (see
+   "Icons and link previews" below).
 3. Add a card for it in the `<ul class="tools">` list on the home page
    (`index.html`), with the same version number, and bump the home page version.
 4. Add a row to the Tools table in `README.md`.
 5. Add a section for the tool to `CHANGELOG.md`, plus a home page entry for the new card.
+
+## Icons and link previews
+
+- `assets/` holds the site icon (`favicon.svg`, `favicon-32.png`, `apple-touch-icon.png`) and `social-preview.png` (1280 × 640), used as the link preview for every page and uploaded by hand as the repo's Social preview (Settings → General).
+- Every page has the icon `<link>`s and the `og:` / `twitter:` meta tags right after `<title>`; tool pages point to `../assets/`. A new tool copies them from an existing tool and sets its own `og:title` (same as `<title>`) and `og:description` (same text as its home-page card).
+- The social image is drawn in `assets/src/social-preview.html` (shared with Electronics Lab; `#el` or `#plc` picks the version) and rendered with `node render.js` run from `assets/src/`. It writes `social-el.png` and `social-plc.png` there: copy this site's one to `assets/social-preview.png` and don't commit the copies left in `assets/src/`. `assets/src` is excluded from the published site.
